@@ -251,6 +251,8 @@ export class Session extends EventEmitter {
       this.deliver({ message_echoes: [{ ...message, from: this.phone, to: phone, to_user_id: lid }] });
       return;
     }
+    // A self-set name on a live message also renames the contact if Chatwoot still shows a number or "LI." id.
+    if (m.pushName) this.shareDirectory(this.mergeDirectory([{ phone, lid, name: null, push_name: m.pushName }]));
     this.deliver({
       contacts: [{ profile: { name: m.pushName || this.nameFor(phone, lid) }, wa_id: phone, user_id: lid }],
       messages: [{ ...message, from: phone || lid }],
