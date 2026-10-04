@@ -5,6 +5,7 @@ import { EventEmitter } from 'node:events';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
+  ALL_WA_PATCH_NAMES,
   DisconnectReason,
   downloadMediaMessage,
   fetchLatestBaileysVersion,
@@ -23,6 +24,7 @@ const SENT_IDS_SIZE = 1000;
 // History sync on first link: how far back to import (0 disables) and how many messages per webhook.
 const HISTORY_DAYS = Number(process.env.BAILEYS_HISTORY_DAYS ?? 30);
 const HISTORY_BATCH_SIZE = 100;
+const DIRECTORY_BATCH_SIZE = 500;
 
 const isDirectChat = jid => !!jid && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'));
 const jidToPhone = jid => /^(\d+)(?::\d+)?@s\.whatsapp\.net$/.exec(jid || '')?.[1] ?? null;
@@ -44,6 +46,27 @@ function contactIdentity(key) {
   const phone = jidToPhone(jid) || jidToPhone(alt);
   const lid = jid.endsWith('@lid') ? lidToAddress(jidNormalizedUser(jid)) : null;
   return { phone, lid };
+}
+
+const norm = jid => (jid ? jidNormalizedUser(jid) || null : null);
+const isLidJid = jid => !!jid && jid.endsWith('@lid');
+
+// Address-book / contact-sync record -> directory entry. `name` is the linked phone's saved name, `notify`
+// the name the person set themselves. `id` can be either their phone jid or their "@lid".
+function identityOfContact(c) {
+  const phone = [c.jid, c.phoneNumber, c.id].map(norm).map(jidToPhone).find(Boolean) || null;
+  const lidJid = [c.lid, c.id].map(norm).find(isLidJid);
+  if (!phone && !lidJid) return null;
+  return { phone, lid: lidJid ? lidToAddress(lidJid) : null, name: c.name || null, push_name: c.notify || c.verifiedName || null };
+}
+
+// History-sync chat -> directory entry. 1:1 chats carry both ids and the chat's (saved) name.
+function identityOfChat(chat) {
+  const id = norm(chat.id);
+  const phone = jidToPhone(norm(chat.pnJid)) || jidToPhone(id);
+  const lidJid = [chat.lidJid, id].map(norm).find(isLidJid);
+  if (!phone && !lidJid) return null;
+  return { phone, lid: lidJid ? lidToAddress(lidJid) : null, name: chat.name || null, push_name: null };
 }
 
 function receiptStatus(n) {
@@ -101,6 +124,8 @@ export class Session extends EventEmitter {
   timer = null;
   everConnected = false;
   media = new Map();
+  // Who is who: phone <-> "@lid" and names, keyed "p:<phone>" or "l:<LI.id>". Persisted next to the login.
+  directory = new Map();
   sentIds = new Set();
   queue = Promise.resolve();
 
@@ -128,7 +153,9 @@ export class Session extends EventEmitter {
     this.status = 'connecting';
     await mkdir(this.dir, { recursive: true });
     await writeFile(path.join(this.dir, 'meta.json'), JSON.stringify({ webhook_url: this.webhookUrl }));
+    await this.loadDirectory();
     const { state, saveCreds } = await useMultiFileAuthState(this.dir);
+    this.auth = state;
     const { version } = await fetchLatestBaileysVersion();
     if (this.stopped) return;
 
@@ -151,6 +178,9 @@ export class Session extends EventEmitter {
     sock.ev.on('messages.upsert', ({ messages }) => current() && messages.forEach(m => this.onMessage(m)));
     sock.ev.on('messages.update', updates => current() && updates.forEach(u => this.onReceipt(u)));
     sock.ev.on('messaging-history.set', batch => current() && this.onHistory(batch));
+    sock.ev.on('contacts.upsert', cs => current() && this.shareDirectory(this.mergeDirectory(cs.map(identityOfContact))));
+    sock.ev.on('contacts.update', cs => current() && this.shareDirectory(this.mergeDirectory(cs.map(identityOfContact))));
+    sock.ev.on('chats.phoneNumberShare', ({ lid, jid }) => current() && this.shareDirectory(this.mergeDirectory([identityOfContact({ id: lid, lid, jid })])));
   }
 
   async onConnectionUpdate({ connection, lastDisconnect, qr }) {
@@ -165,6 +195,8 @@ export class Session extends EventEmitter {
       this.qr = null;
       this.phone = jidToPhone(this.sock.user?.id);
       this.log.info({ phone: this.phone }, 'connected');
+      // Numbers linked before the directory existed never sent their contact list: ask the phone again once.
+      if (this.directory.size === 0) setTimeout(() => this.resyncContacts(), 15_000);
     }
     if (connection !== 'close') return;
 
@@ -219,7 +251,7 @@ export class Session extends EventEmitter {
       return;
     }
     this.deliver({
-      contacts: [{ profile: { name: m.pushName || null }, wa_id: phone, user_id: lid }],
+      contacts: [{ profile: { name: m.pushName || this.nameFor(phone, lid) }, wa_id: phone, user_id: lid }],
       messages: [{ ...message, from: phone || lid }],
     });
   }
@@ -234,11 +266,7 @@ export class Session extends EventEmitter {
   onHistory({ messages, chats, contacts }) {
     if (HISTORY_DAYS <= 0 || !Array.isArray(messages)) return;
     const cutoff = Date.now() / 1000 - HISTORY_DAYS * 86_400;
-    const names = new Map();
-    for (const c of [...(contacts || []), ...(chats || [])]) {
-      const name = c.name || c.notify;
-      if (c.id && name) names.set(jidNormalizedUser(c.id), name);
-    }
+    const changed = this.mergeDirectory([...(contacts || []).map(identityOfContact), ...(chats || []).map(identityOfChat)]);
 
     const history = messages.flatMap(m => {
       const timestamp = Number(m.messageTimestamp || 0);
@@ -253,7 +281,7 @@ export class Session extends EventEmitter {
         from_me: !!m.key.fromMe,
         phone,
         lid,
-        name: m.key.fromMe ? names.get(jidNormalizedUser(m.key.remoteJid)) || null : m.pushName || names.get(jidNormalizedUser(m.key.remoteJid)) || null,
+        name: this.nameFor(phone, lid) || (m.key.fromMe ? null : m.pushName || null),
         type: body.type,
         text: body.text?.body || media?.caption || null,
       }];
@@ -261,6 +289,70 @@ export class Session extends EventEmitter {
 
     for (let i = 0; i < history.length; i += HISTORY_BATCH_SIZE) this.deliver({ history: history.slice(i, i + HISTORY_BATCH_SIZE) });
     if (history.length) this.log.info({ messages: history.length }, 'history batch queued');
+    // After the history, so the contacts it creates exist when their names arrive.
+    this.shareDirectory(changed);
+  }
+
+  nameFor(phone, lid) {
+    const entry = (phone && this.directory.get(`p:${phone}`)) || (lid && this.directory.get(`l:${lid}`));
+    return entry?.name || entry?.push_name || null;
+  }
+
+  // Folds new identities into the directory; returns the entries that changed.
+  mergeDirectory(identities) {
+    const changed = new Map();
+    for (const identity of identities) {
+      if (!identity) continue;
+      const lidKey = identity.lid && `l:${identity.lid}`;
+      const phone = identity.phone || (lidKey && this.directory.get(lidKey)?.phone) || null;
+      const key = phone ? `p:${phone}` : lidKey;
+      const previous = { ...(lidKey && this.directory.get(lidKey)), ...this.directory.get(key) };
+      const next = {
+        phone,
+        lid: identity.lid || previous.lid || null,
+        name: identity.name || previous.name || null,
+        push_name: identity.push_name || previous.push_name || null,
+      };
+      if (JSON.stringify(next) === JSON.stringify({ phone: null, lid: null, name: null, push_name: null, ...previous })) continue;
+      this.directory.set(key, next);
+      // Keep the "@lid" alias pointing at the same entry, so lookups by either id agree.
+      if (next.lid && key !== `l:${next.lid}`) this.directory.set(`l:${next.lid}`, next);
+      changed.set(key, next);
+    }
+    if (changed.size) this.saveDirectory();
+    return [...changed.values()];
+  }
+
+  shareDirectory(entries) {
+    for (let i = 0; i < entries.length; i += DIRECTORY_BATCH_SIZE) this.deliver({ directory: entries.slice(i, i + DIRECTORY_BATCH_SIZE) });
+  }
+
+  async loadDirectory() {
+    if (this.directory.size) return;
+    try {
+      const entries = JSON.parse(await readFile(path.join(this.dir, 'directory.json'), 'utf8'));
+      for (const [key, value] of entries) this.directory.set(key, value);
+    } catch {
+      /* first run: no directory yet */
+    }
+  }
+
+  saveDirectory() {
+    writeFile(path.join(this.dir, 'directory.json'), JSON.stringify([...this.directory])).catch(err =>
+      this.log.warn({ err: String(err) }, 'could not save directory')
+    );
+  }
+
+  // Forget how far the contact list was synced, so the phone re-sends every contact (contacts.upsert).
+  async resyncContacts() {
+    if (!this.sock || !this.auth || this.status !== 'connected') return;
+    try {
+      await this.auth.keys.set({ 'app-state-sync-version': Object.fromEntries(ALL_WA_PATCH_NAMES.map(n => [n, null])) });
+      await this.sock.resyncAppState(ALL_WA_PATCH_NAMES, true);
+      this.log.info({ entries: this.directory.size }, 'contact list resynced');
+    } catch (err) {
+      this.log.warn({ err: String(err) }, 'contact resync failed');
+    }
   }
 
   rememberMedia(m, mime) {

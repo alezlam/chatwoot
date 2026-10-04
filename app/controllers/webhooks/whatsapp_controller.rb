@@ -12,7 +12,7 @@ class Webhooks::WhatsappController < ActionController::API
     end
 
     return head :ok if tracking_events_only?
-    return import_baileys_history if whatsapp_channel&.baileys? && params[:history].present?
+    return apply_baileys_sync if whatsapp_channel&.baileys? && (params[:history].present? || params[:directory].present?)
 
     Webhooks::WhatsappEventsJob.perform_later(params.to_unsafe_hash)
     head :ok
@@ -20,10 +20,13 @@ class Webhooks::WhatsappController < ActionController::API
 
   private
 
-  # History arrives in ordered batches right after a phone is linked. Importing inline makes the sidecar
-  # wait for each batch, so batches never race each other into duplicate contacts or conversations.
-  def import_baileys_history
-    Whatsapp::BaileysHistoryImportService.new(inbox: whatsapp_channel.inbox, messages: params[:history].map(&:to_unsafe_h)).perform
+  # History (right after a phone is linked) and the contact directory (names, hidden-number mappings) arrive in
+  # ordered batches. Applying them inline makes the sidecar wait for each batch, so batches never race each other
+  # into duplicate contacts or conversations.
+  def apply_baileys_sync
+    inbox = whatsapp_channel.inbox
+    Whatsapp::BaileysHistoryImportService.new(inbox: inbox, messages: params[:history].map(&:to_unsafe_h)).perform if params[:history].present?
+    Whatsapp::BaileysContactDirectoryService.new(inbox: inbox, entries: params[:directory].map(&:to_unsafe_h)).perform if params[:directory].present?
     head :ok
   end
 
