@@ -20,6 +20,9 @@ const MAX_BACKOFF_MS = 60_000;
 // webhook, so a short-lived index is enough; persist to disk if downloads start missing.
 const MEDIA_CACHE_SIZE = 500;
 const SENT_IDS_SIZE = 1000;
+// History sync on first link: how far back to import (0 disables) and how many messages per webhook.
+const HISTORY_DAYS = Number(process.env.BAILEYS_HISTORY_DAYS ?? 30);
+const HISTORY_BATCH_SIZE = 100;
 
 const isDirectChat = jid => !!jid && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'));
 const jidToPhone = jid => /^(\d+)(?::\d+)?@s\.whatsapp\.net$/.exec(jid || '')?.[1] ?? null;
@@ -137,7 +140,8 @@ export class Session extends EventEmitter {
       keepAliveIntervalMs: 30_000,
       // Not "online" on connect: keeps notifications flowing to the phone.
       markOnlineOnConnect: false,
-      syncFullHistory: false,
+      // The phone streams its chat history once, right after a fresh link (messaging-history.set).
+      syncFullHistory: HISTORY_DAYS > 0,
     });
     this.sock = sock;
     const current = () => this.sock === sock;
@@ -146,6 +150,7 @@ export class Session extends EventEmitter {
     sock.ev.on('connection.update', update => current() && this.onConnectionUpdate(update));
     sock.ev.on('messages.upsert', ({ messages }) => current() && messages.forEach(m => this.onMessage(m)));
     sock.ev.on('messages.update', updates => current() && updates.forEach(u => this.onReceipt(u)));
+    sock.ev.on('messaging-history.set', batch => current() && this.onHistory(batch));
   }
 
   async onConnectionUpdate({ connection, lastDisconnect, qr }) {
@@ -223,6 +228,39 @@ export class Session extends EventEmitter {
     if (!key?.fromMe || update?.status == null) return;
     const status = receiptStatus(update.status);
     if (status) this.deliver({ statuses: [{ id: key.id, status, timestamp: String(Math.floor(Date.now() / 1000)) }] });
+  }
+
+  // Old messages from the phone's history sync. Media is not downloaded: Chatwoot stores a placeholder.
+  onHistory({ messages, chats, contacts }) {
+    if (HISTORY_DAYS <= 0 || !Array.isArray(messages)) return;
+    const cutoff = Date.now() / 1000 - HISTORY_DAYS * 86_400;
+    const names = new Map();
+    for (const c of [...(contacts || []), ...(chats || [])]) {
+      const name = c.name || c.notify;
+      if (c.id && name) names.set(jidNormalizedUser(c.id), name);
+    }
+
+    const history = messages.flatMap(m => {
+      const timestamp = Number(m.messageTimestamp || 0);
+      if (!m.key?.id || !isDirectChat(m.key.remoteJid) || timestamp < cutoff) return [];
+      const body = messageBody(m);
+      if (!body || body.type === 'unsupported') return [];
+      const { phone, lid } = contactIdentity(m.key);
+      const media = body[body.type];
+      return [{
+        id: m.key.id,
+        timestamp,
+        from_me: !!m.key.fromMe,
+        phone,
+        lid,
+        name: m.key.fromMe ? names.get(jidNormalizedUser(m.key.remoteJid)) || null : m.pushName || names.get(jidNormalizedUser(m.key.remoteJid)) || null,
+        type: body.type,
+        text: body.text?.body || media?.caption || null,
+      }];
+    });
+
+    for (let i = 0; i < history.length; i += HISTORY_BATCH_SIZE) this.deliver({ history: history.slice(i, i + HISTORY_BATCH_SIZE) });
+    if (history.length) this.log.info({ messages: history.length }, 'history batch queued');
   }
 
   rememberMedia(m, mime) {

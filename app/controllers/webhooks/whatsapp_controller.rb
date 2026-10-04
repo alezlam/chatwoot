@@ -12,12 +12,20 @@ class Webhooks::WhatsappController < ActionController::API
     end
 
     return head :ok if tracking_events_only?
+    return import_baileys_history if whatsapp_channel&.baileys? && params[:history].present?
 
     Webhooks::WhatsappEventsJob.perform_later(params.to_unsafe_hash)
     head :ok
   end
 
   private
+
+  # History arrives in ordered batches right after a phone is linked. Importing inline makes the sidecar
+  # wait for each batch, so batches never race each other into duplicate contacts or conversations.
+  def import_baileys_history
+    Whatsapp::BaileysHistoryImportService.new(inbox: whatsapp_channel.inbox, messages: params[:history].map(&:to_unsafe_h)).perform
+    head :ok
+  end
 
   # The Baileys sidecar signs its webhooks with the shared BAILEYS_API_KEY instead of a Meta signature.
   def verify_baileys_token!
