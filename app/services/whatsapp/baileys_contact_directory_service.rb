@@ -4,6 +4,7 @@
 # Only contacts this inbox already has are touched; the address book never creates contacts. A name is
 # only replaced while it is still a placeholder (blank, a phone number or an "LI." id), so names an
 # agent typed are kept. A hidden-number contact is merged into the contact that has its phone number.
+# A WhatsApp profile photo is imported only for contacts without an avatar, so uploaded ones are kept.
 class Whatsapp::BaileysContactDirectoryService
   PLACEHOLDER_NAME = /\A(\+?\d+|LI\.\w+)\z/
 
@@ -12,7 +13,10 @@ class Whatsapp::BaileysContactDirectoryService
   def perform
     entries.each do |entry|
       contact = resolve_contact(entry)
-      rename(contact, entry) if contact
+      next unless contact
+
+      rename(contact, entry)
+      Avatar::AvatarFromUrlJob.perform_later(contact, entry[:avatar_url]) if entry[:avatar_url].present? && !contact.avatar.attached?
     end
   end
 

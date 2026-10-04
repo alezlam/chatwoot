@@ -25,6 +25,9 @@ const SENT_IDS_SIZE = 1000;
 const HISTORY_DAYS = Number(process.env.BAILEYS_HISTORY_DAYS ?? 30);
 const HISTORY_BATCH_SIZE = 100;
 const DIRECTORY_BATCH_SIZE = 500;
+// Profile photos: one lookup at a time, spaced out, and re-checked at most weekly per contact.
+const AVATAR_LOOKUP_GAP_MS = 1_500;
+const AVATAR_RECHECK_MS = 7 * 86_400_000;
 
 const isDirectChat = jid => !!jid && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'));
 const jidToPhone = jid => /^(\d+)(?::\d+)?@s\.whatsapp\.net$/.exec(jid || '')?.[1] ?? null;
@@ -254,6 +257,7 @@ export class Session extends EventEmitter {
     }
     // A self-set name on a live message also renames the contact if Chatwoot still shows a number or "LI." id.
     if (m.pushName) this.shareDirectory(this.mergeDirectory([{ phone, lid, name: null, push_name: m.pushName }]));
+    this.queueAvatar(phone, lid);
     this.deliver({
       contacts: [{ profile: { name: m.pushName || this.nameFor(phone, lid) }, wa_id: phone, user_id: lid }],
       messages: [{ ...message, from: phone || lid }],
@@ -306,6 +310,7 @@ export class Session extends EventEmitter {
     }, 'history batch queued');
     // After the history, so the contacts it creates exist when their names arrive.
     this.shareDirectory(changed);
+    for (const { phone, lid } of history) this.queueAvatar(phone, lid);
   }
 
   onContacts(event, contacts) {
@@ -332,8 +337,11 @@ export class Session extends EventEmitter {
         lid: identity.lid || previous.lid || null,
         name: identity.name || previous.name || null,
         push_name: identity.push_name || previous.push_name || null,
+        avatar_url: identity.avatar_url ?? previous.avatar_url ?? null,
+        avatar_checked_at: identity.avatar_checked_at ?? previous.avatar_checked_at ?? null,
       };
-      if (JSON.stringify(next) === JSON.stringify({ phone: null, lid: null, name: null, push_name: null, ...previous })) continue;
+      const empty = { phone: null, lid: null, name: null, push_name: null, avatar_url: null, avatar_checked_at: null };
+      if (JSON.stringify(next) === JSON.stringify({ ...empty, ...previous })) continue;
       this.directory.set(key, next);
       // Keep the "@lid" alias pointing at the same entry, so lookups by either id agree.
       if (next.lid && key !== `l:${next.lid}`) this.directory.set(`l:${next.lid}`, next);
@@ -434,6 +442,28 @@ export class Session extends EventEmitter {
       await this.sock.sendPresenceUpdate('paused', jid);
     } catch {
       /* presence is best-effort */
+    }
+  }
+
+  // Looks up the contact's profile photo (only people we chat with, never the whole address book).
+  queueAvatar(phone, lid) {
+    const key = phone ? `p:${phone}` : `l:${lid}`;
+    const checkedAt = this.directory.get(key)?.avatar_checked_at || 0;
+    if (Date.now() - checkedAt < AVATAR_RECHECK_MS || this.avatarPending?.has(key)) return;
+    (this.avatarPending ||= new Set()).add(key);
+    this.avatarQueue = (this.avatarQueue || Promise.resolve()).then(() => this.lookupAvatar(key, phone, lid));
+  }
+
+  async lookupAvatar(key, phone, lid) {
+    try {
+      if (!this.sock || this.status !== 'connected') return;
+      const jid = phone ? `${phone}@s.whatsapp.net` : toJid(lid);
+      // Hidden by the contact's privacy settings (or no photo): WhatsApp answers with an error or nothing.
+      const url = await this.sock.profilePictureUrl(jid, 'image').catch(() => null);
+      this.shareDirectory(this.mergeDirectory([{ phone, lid, name: null, push_name: null, avatar_url: url || null, avatar_checked_at: Date.now() }]));
+    } finally {
+      this.avatarPending.delete(key);
+      await new Promise(r => setTimeout(r, AVATAR_LOOKUP_GAP_MS));
     }
   }
 
