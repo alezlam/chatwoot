@@ -195,8 +195,9 @@ export class Session extends EventEmitter {
       this.qr = null;
       this.phone = jidToPhone(this.sock.user?.id);
       this.log.info({ phone: this.phone }, 'connected');
-      // Numbers linked before the directory existed never sent their contact list: ask the phone again once.
-      if (this.directory.size === 0) setTimeout(() => this.resyncContacts(), 15_000);
+      // Re-send what we know on every connect (cheap: Chatwoot only touches existing contacts), so names that
+      // missed a deploy still land. Numbers linked before the directory existed get their contact list re-requested.
+      setTimeout(() => (this.directory.size ? this.shareDirectory(this.directoryEntries()) : this.resyncContacts()), 15_000);
     }
     if (connection !== 'close') return;
 
@@ -321,6 +322,10 @@ export class Session extends EventEmitter {
     }
     if (changed.size) this.saveDirectory();
     return [...changed.values()];
+  }
+
+  directoryEntries() {
+    return [...new Set(this.directory.values())];
   }
 
   shareDirectory(entries) {
