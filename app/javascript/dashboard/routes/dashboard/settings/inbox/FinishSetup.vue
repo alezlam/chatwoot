@@ -8,6 +8,7 @@ import EmptyState from '../../../../components/widgets/EmptyState.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import DuplicateInboxBanner from './channels/instagram/DuplicateInboxBanner.vue';
 import EmailInboxFinish from './channels/emailChannels/EmailInboxFinish.vue';
+import WhatsappBaileysPairing from './components/WhatsappBaileysPairing.vue';
 import WhatsappChannelAPI from 'dashboard/api/channel/whatsappChannel';
 import { useAlert } from 'dashboard/composables';
 import { useInbox } from 'dashboard/composables/useInbox';
@@ -32,6 +33,7 @@ const currentInbox = computed(() =>
 // Use useInbox composable with the inbox ID
 const {
   isAWhatsAppCloudChannel,
+  isAWhatsAppBaileysChannel,
   isAWhatsAppChannel,
   isASmsInbox,
   isALineChannel,
@@ -69,7 +71,12 @@ const whatsappPhoneNumber = computed(() => {
 });
 
 const shouldShowWhatsAppQr = computed(() => {
-  return isAWhatsAppChannel.value && Boolean(whatsappPhoneNumber.value);
+  // WhatsApp Web inboxes show the pairing QR instead; two QR codes side by side would be confusing.
+  return (
+    isAWhatsAppChannel.value &&
+    !isAWhatsAppBaileysChannel.value &&
+    Boolean(whatsappPhoneNumber.value)
+  );
 });
 
 const shouldShowSmsQr = computed(() => {
@@ -200,6 +207,12 @@ watch(
             v-if="currentInbox.web_widget_script"
             :script="currentInbox.web_widget_script"
           />
+        </div>
+        <div
+          v-if="isAWhatsAppBaileysChannel"
+          class="mx-auto mt-8 max-w-[50%] text-start"
+        >
+          <WhatsappBaileysPairing :inbox-id="currentInbox.id" />
         </div>
         <div
           v-if="shouldShowWhatsAppWebhookDetails"

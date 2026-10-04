@@ -2,6 +2,7 @@ class Webhooks::WhatsappController < ActionController::API
   include MetaTokenVerifyConcern
 
   before_action :verify_meta_signature!, only: :process_payload
+  before_action :verify_baileys_token!, only: :process_payload
 
   def process_payload
     if inactive_whatsapp_number?
@@ -11,12 +12,31 @@ class Webhooks::WhatsappController < ActionController::API
     end
 
     return head :ok if tracking_events_only?
+    return apply_baileys_sync if whatsapp_channel&.baileys? && (params[:history].present? || params[:directory].present?)
 
     Webhooks::WhatsappEventsJob.perform_later(params.to_unsafe_hash)
     head :ok
   end
 
   private
+
+  # History (right after a phone is linked) and the contact directory (names, hidden-number mappings) arrive in
+  # ordered batches. Applying them inline makes the sidecar wait for each batch, so batches never race each other
+  # into duplicate contacts or conversations.
+  def apply_baileys_sync
+    inbox = whatsapp_channel.inbox
+    Whatsapp::BaileysHistoryImportService.new(inbox: inbox, messages: params[:history].map(&:to_unsafe_h)).perform if params[:history].present?
+    Whatsapp::BaileysContactDirectoryService.new(inbox: inbox, entries: params[:directory].map(&:to_unsafe_h)).perform if params[:directory].present?
+    head :ok
+  end
+
+  # The Baileys sidecar signs its webhooks with the shared BAILEYS_API_KEY instead of a Meta signature.
+  def verify_baileys_token!
+    return unless whatsapp_channel&.baileys?
+    return if ActiveSupport::SecurityUtils.secure_compare(request.headers['Authorization'].to_s, "Bearer #{ENV.fetch('BAILEYS_API_KEY')}")
+
+    head :unauthorized
+  end
 
   def tracking_events_only?
     return false unless params[:object] == 'whatsapp_business_account'

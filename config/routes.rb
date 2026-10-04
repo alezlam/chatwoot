@@ -347,6 +347,7 @@ Rails.application.routes.draw do
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates' do
               post :analyze, on: :collection
             end
+            resource :whatsapp_baileys_session, only: [:show, :create, :destroy], controller: 'inbox_whatsapp_baileys_sessions'
           end
 
           resources :inbox_members, only: [:create, :show], param: :inbox_id do

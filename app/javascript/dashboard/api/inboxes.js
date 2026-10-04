@@ -65,6 +65,18 @@ class Inboxes extends CacheEnabledApiClient {
     });
   }
 
+  getWhatsappBaileysSession(inboxId) {
+    return axios.get(`${this.url}/${inboxId}/whatsapp_baileys_session`);
+  }
+
+  startWhatsappBaileysSession(inboxId) {
+    return axios.post(`${this.url}/${inboxId}/whatsapp_baileys_session`);
+  }
+
+  logoutWhatsappBaileysSession(inboxId) {
+    return axios.delete(`${this.url}/${inboxId}/whatsapp_baileys_session`);
+  }
+
   resetSecret(inboxId) {
     return axios.post(`${this.url}/${inboxId}/reset_secret`);
   }

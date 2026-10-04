@@ -16,6 +16,7 @@ import TextArea from 'next/textarea/TextArea.vue';
 import { sanitizeAllowedDomains } from 'dashboard/helper/URLHelper';
 import WhatsappBusinessManagementToken from './WhatsappBusinessManagementToken.vue';
 import HmacSecretKey from './components/HmacSecretKey.vue';
+import WhatsappBaileysPairing from '../components/WhatsappBaileysPairing.vue';
 
 export default {
   components: {
@@ -28,6 +29,7 @@ export default {
     TextArea,
     WhatsappBusinessManagementToken,
     HmacSecretKey,
+    WhatsappBaileysPairing,
   },
   mixins: [inboxMixin],
   props: {
@@ -382,6 +384,9 @@ export default {
     </div>
     <ImapSettings :inbox="inbox" />
     <SmtpSettings :inbox="inbox" />
+  </div>
+  <div v-else-if="isAWhatsAppBaileysChannel">
+    <WhatsappBaileysPairing :inbox-id="inbox.id" />
   </div>
   <div v-else-if="isAWhatsAppChannel && !isATwilioChannel">
     <div v-if="inbox.provider_config">

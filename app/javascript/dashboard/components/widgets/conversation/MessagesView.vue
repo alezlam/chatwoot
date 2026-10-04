@@ -382,7 +382,8 @@ export default {
       const incoming = this.inboxHasFeature(INBOX_FEATURES.REPLY_TO);
       const outgoing =
         this.inboxHasFeature(INBOX_FEATURES.REPLY_TO_OUTGOING) &&
-        !this.is360DialogWhatsAppChannel;
+        !this.is360DialogWhatsAppChannel &&
+        !this.isAWhatsAppBaileysChannel;
 
       return { incoming, outgoing };
     },
