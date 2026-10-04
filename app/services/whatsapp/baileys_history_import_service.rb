@@ -3,7 +3,8 @@
 # History is not live traffic, so messages and conversations are bulk inserted, which skips the
 # model callbacks: no agent notifications, automations, assignment, webhooks or unread counts.
 # Each contact gets one resolved conversation that reopens through the normal flow on a new message.
-# Media is not downloaded; it is stored as a text placeholder (plus its caption).
+# Media starts as a text placeholder (plus its caption) and is attached in the background by
+# Channels::Whatsapp::BaileysHistoryMediaJob, which also repairs placeholders when the history is sent again.
 class Whatsapp::BaileysHistoryImportService
   pattr_initialize [:inbox!, :messages!]
 
@@ -12,9 +13,17 @@ class Whatsapp::BaileysHistoryImportService
     new_messages.group_by { |message| message[:phone].presence || message[:lid] }.each_value do |contact_messages|
       import_contact_messages(contact_messages.sort_by { |message| message[:timestamp].to_i })
     end
+    enqueue_media_downloads
   end
 
   private
+
+  # Also covers messages imported earlier as placeholders: the job skips any that already have an attachment.
+  def enqueue_media_downloads
+    messages.each do |message|
+      Channels::Whatsapp::BaileysHistoryMediaJob.perform_later(inbox.id, message[:id], message[:type]) if message[:media_id].present?
+    end
+  end
 
   def imported_source_ids
     @imported_source_ids ||= inbox.messages.where(source_id: messages.pluck(:id)).pluck(:source_id).to_set

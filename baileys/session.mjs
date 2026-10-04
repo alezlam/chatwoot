@@ -17,9 +17,9 @@ import {
 import QRCode from 'qrcode';
 
 const MAX_BACKOFF_MS = 60_000;
-// ponytail: in-memory media index, lost on restart. Chatwoot downloads media right after the
-// webhook, so a short-lived index is enough; persist to disk if downloads start missing.
-const MEDIA_CACHE_SIZE = 500;
+// ponytail: in-memory media index, lost on restart. Chatwoot downloads media shortly after the webhook
+// (history media through a background job), so the index only needs to outlive that; persist it if downloads miss.
+const MEDIA_CACHE_SIZE = 5000;
 const SENT_IDS_SIZE = 1000;
 // History sync on first link: how far back to import (0 disables) and how many messages per webhook.
 const HISTORY_DAYS = Number(process.env.BAILEYS_HISTORY_DAYS ?? 30);
@@ -94,11 +94,12 @@ function messageBody(m) {
     [type]: { id: m.key.id, mime_type: x.mimetype || null, caption: x.caption || null, filename: x.fileName || null },
   });
   if (c.imageMessage) return media('image', c.imageMessage);
+  // GIFs and stickers are not imported.
+  if (c.videoMessage?.gifPlayback || c.stickerMessage) return null;
   if (c.videoMessage) return media('video', c.videoMessage);
   if (c.ptvMessage) return media('video', c.ptvMessage);
   if (c.audioMessage) return media('audio', c.audioMessage);
   if (c.documentMessage) return media('document', c.documentMessage);
-  if (c.stickerMessage) return media('sticker', c.stickerMessage);
 
   const loc = c.locationMessage || c.liveLocationMessage;
   if (loc) {
@@ -178,8 +179,8 @@ export class Session extends EventEmitter {
     sock.ev.on('messages.upsert', ({ messages }) => current() && messages.forEach(m => this.onMessage(m)));
     sock.ev.on('messages.update', updates => current() && updates.forEach(u => this.onReceipt(u)));
     sock.ev.on('messaging-history.set', batch => current() && this.onHistory(batch));
-    sock.ev.on('contacts.upsert', cs => current() && this.shareDirectory(this.mergeDirectory(cs.map(identityOfContact))));
-    sock.ev.on('contacts.update', cs => current() && this.shareDirectory(this.mergeDirectory(cs.map(identityOfContact))));
+    sock.ev.on('contacts.upsert', cs => current() && this.onContacts('contacts.upsert', cs));
+    sock.ev.on('contacts.update', cs => current() && this.onContacts('contacts.update', cs));
     sock.ev.on('chats.phoneNumberShare', ({ lid, jid }) => current() && this.shareDirectory(this.mergeDirectory([identityOfContact({ id: lid, lid, jid })])));
   }
 
@@ -278,6 +279,7 @@ export class Session extends EventEmitter {
       if (!body || body.type === 'unsupported') return [];
       const { phone, lid } = contactIdentity(m.key);
       const media = body[body.type];
+      if (media?.id) this.rememberMedia(m, media.mime_type);
       return [{
         id: m.key.id,
         timestamp,
@@ -287,13 +289,28 @@ export class Session extends EventEmitter {
         name: this.nameFor(phone, lid) || (m.key.fromMe ? null : m.pushName || null),
         type: body.type,
         text: body.text?.body || media?.caption || null,
+        // Media is downloaded later by Chatwoot from GET /sessions/:id/media/:media_id.
+        media_id: media?.id || null,
       }];
     });
 
     for (let i = 0; i < history.length; i += HISTORY_BATCH_SIZE) this.deliver({ history: history.slice(i, i + HISTORY_BATCH_SIZE) });
-    if (history.length) this.log.info({ messages: history.length }, 'history batch queued');
+    // Counts only (no names or numbers in logs): shows whether WhatsApp sent any names with the history.
+    this.log.info({
+      messages: history.length,
+      chats: chats?.length || 0,
+      named_chats: (chats || []).filter(c => c.name).length,
+      contacts: contacts?.length || 0,
+      named_contacts: (contacts || []).filter(c => c.name || c.notify).length,
+      messages_with_push_name: messages.filter(m => m.pushName).length,
+    }, 'history batch queued');
     // After the history, so the contacts it creates exist when their names arrive.
     this.shareDirectory(changed);
+  }
+
+  onContacts(event, contacts) {
+    this.log.info({ event, contacts: contacts.length, named: contacts.filter(c => c.name || c.notify).length }, 'contact sync');
+    this.shareDirectory(this.mergeDirectory(contacts.map(identityOfContact)));
   }
 
   nameFor(phone, lid) {
