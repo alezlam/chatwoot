@@ -35,9 +35,14 @@ class Whatsapp::BaileysContactDirectoryService
     contact.update!(attributes) if attributes.any?
   end
 
+  # A real name wins; otherwise a hidden "LI." id falls back to the phone number once WhatsApp reveals it.
   def new_name(contact, entry)
+    return unless placeholder_name?(contact)
+
     name = entry[:name].presence || entry[:push_name].presence
-    name if name && placeholder_name?(contact)
+    return name if name
+
+    "+#{entry[:phone]}" if entry[:phone].present? && contact.name.to_s.start_with?('LI.')
   end
 
   def new_phone_number(contact, phone)
