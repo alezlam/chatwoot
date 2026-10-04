@@ -250,7 +250,7 @@ export class Session extends EventEmitter {
 
     if (body[body.type]?.id) this.rememberMedia(m, body[body.type].mime_type);
 
-    const { phone, lid } = contactIdentity(m.key);
+    const { phone, lid } = this.resolveIdentity(m.key);
     const message = { id: m.key.id, timestamp: String(m.messageTimestamp || Math.floor(Date.now() / 1000)), ...body };
     const quoted = contextId(normalizeMessageContent(m.message) || {});
     if (quoted) message.context = { id: quoted };
@@ -286,7 +286,7 @@ export class Session extends EventEmitter {
       if (!m.key?.id || !isDirectChat(m.key.remoteJid) || timestamp < cutoff) return [];
       const body = messageBody(m);
       if (!body || body.type === 'unsupported') return [];
-      const { phone, lid } = contactIdentity(m.key);
+      const { phone, lid } = this.resolveIdentity(m.key);
       const media = body[body.type];
       if (media?.id) this.rememberMedia(m, media.mime_type);
       return [{
@@ -321,6 +321,18 @@ export class Session extends EventEmitter {
   onContacts(event, contacts) {
     this.log.info({ event, contacts: contacts.length, named: contacts.filter(c => c.name || c.notify).length }, 'contact sync');
     this.shareDirectory(this.mergeDirectory(contacts.map(identityOfContact)));
+  }
+
+  // The phone behind a hidden "@lid" id: from the message itself when WhatsApp includes it (incoming
+  // messages usually do), else from the directory (the address book pairs saved contacts with their id).
+  // Messages we send from the phone carry only the id, so without this they would open a duplicate contact.
+  resolveIdentity(key) {
+    const { phone, lid } = contactIdentity(key);
+    if (phone && lid && this.directory.get(`l:${lid}`)?.phone !== phone) {
+      // Learned a new pairing: Chatwoot merges any contact that was created under the hidden id alone.
+      this.shareDirectory(this.mergeDirectory([{ phone, lid }]));
+    }
+    return { phone: phone || (lid && this.directory.get(`l:${lid}`)?.phone) || null, lid };
   }
 
   nameFor(phone, lid) {
