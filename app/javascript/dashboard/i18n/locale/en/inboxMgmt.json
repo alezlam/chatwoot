@@ -253,7 +253,9 @@
           "WHATSAPP_CLOUD_DESC": "Quick setup through Meta",
           "WHATSAPP_CLOUD_MANUAL_SETUP_DESC": "Manual setup with Cloud API credentials",
           "TWILIO_DESC": "Connect via Twilio credentials",
-          "360_DIALOG": "360Dialog"
+          "360_DIALOG": "360Dialog",
+          "BAILEYS": "WhatsApp Web",
+          "BAILEYS_DESC": "Link any number by scanning a QR code (unofficial)"
         },
         "SELECT_PROVIDER": {
           "TITLE": "Select your API provider",
@@ -441,6 +443,21 @@
           "ERROR_MESSAGE": "We were not able to save the WhatsApp channel",
           "MANUAL_RESTRICTION_WARNING": "WhatsApp Embedded Signup is temporarily unavailable due to an API-level issue on Meta’s side, not a problem with Chatwoot. Manual setup works only for numbers already connected to WhatsApp Cloud API. Numbers using WhatsApp Business app coexistence are not supported in this flow yet. We’re working closely with Meta to resolve the issue as quickly as possible. Thanks for your patience.",
           "STATUS_LINK": "View status updates"
+        },
+        "BAILEYS": {
+          "WARNING": "WhatsApp Web inboxes use an unofficial connection. WhatsApp may ban numbers that send bulk or automated messages, and message templates are not available.",
+          "PAIRING": {
+            "TITLE": "Link your phone",
+            "DESCRIPTION": "On your phone, open WhatsApp → Settings → Linked devices → Link a device, then scan this QR code.",
+            "GENERATE": "Show QR code",
+            "WAITING": "Waiting for the QR code…",
+            "CONNECTED": "Linked to {phoneNumber}",
+            "DISCONNECTED": "Not linked. Generate a QR code to link a phone.",
+            "RECONNECTING": "Reconnecting to WhatsApp…",
+            "UNLINK": "Unlink phone",
+            "UNLINK_SUCCESS": "Phone unlinked",
+            "ERROR": "Could not reach the WhatsApp Web service. Make sure it is running."
+          }
         }
       },
       "VOICE": {

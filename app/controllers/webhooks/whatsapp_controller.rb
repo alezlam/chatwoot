@@ -2,6 +2,7 @@ class Webhooks::WhatsappController < ActionController::API
   include MetaTokenVerifyConcern
 
   before_action :verify_meta_signature!, only: :process_payload
+  before_action :verify_baileys_token!, only: :process_payload
 
   def process_payload
     if inactive_whatsapp_number?
@@ -17,6 +18,14 @@ class Webhooks::WhatsappController < ActionController::API
   end
 
   private
+
+  # The Baileys sidecar signs its webhooks with the shared BAILEYS_API_KEY instead of a Meta signature.
+  def verify_baileys_token!
+    return unless whatsapp_channel&.baileys?
+    return if ActiveSupport::SecurityUtils.secure_compare(request.headers['Authorization'].to_s, "Bearer #{ENV.fetch('BAILEYS_API_KEY')}")
+
+    head :unauthorized
+  end
 
   def tracking_events_only?
     return false unless params[:object] == 'whatsapp_business_account'

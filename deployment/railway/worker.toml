@@ -1,0 +1,9 @@
+# Railway "worker" service: Sidekiq. Same image as web.
+# Service settings → Config-as-code → Railway config file: /deployment/railway/worker.toml
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile"
+
+[deploy]
+startCommand = "bundle exec sidekiq -C config/sidekiq.yml"
+restartPolicyType = "ON_FAILURE"

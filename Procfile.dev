@@ -2,3 +2,4 @@ backend: bin/rails s -p 3000
 # https://github.com/mperham/sidekiq/issues/3090#issuecomment-389748695
 worker: dotenv bundle exec sidekiq -C config/sidekiq.yml
 vite: bin/vite dev
+baileys: cd baileys && pnpm install --frozen-lockfile --silent && dotenv -f ../.env node server.mjs

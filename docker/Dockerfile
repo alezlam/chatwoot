@@ -87,13 +87,15 @@ RUN if [ "$RAILS_ENV" = "production" ]; then \
   fi
 
 # Generate .git_sha file with current commit hash
-RUN git rev-parse HEAD > /app/.git_sha
+# Railway builds from a source snapshot without .git, so fall back to the commit sha it injects.
+ARG RAILWAY_GIT_COMMIT_SHA
+RUN (git rev-parse HEAD 2>/dev/null || echo "${RAILWAY_GIT_COMMIT_SHA:-unknown}") > /app/.git_sha
 
 # Remove unnecessary files
 RUN rm -rf /gems/ruby/3.4.0/cache/*.gem \
   && find /gems/ruby/3.4.0/gems/ \( -name "*.c" -o -name "*.o" \) -delete \
   && rm -rf .git \
-  && rm .gitignore
+  && rm -f .gitignore
 
 # final build stage
 FROM ruby:3.4.4-alpine3.21

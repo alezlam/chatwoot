@@ -1,0 +1,12 @@
+# Railway "baileys" service: WhatsApp Web sidecar. Needs a volume mounted at /data and must stay at
+# one replica (two sockets on one WhatsApp login keep kicking each other off).
+# Service settings → Config-as-code → Railway config file: /deployment/railway/baileys.toml
+# Service settings → Root directory: /baileys
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["/baileys/**"]
+
+[deploy]
+healthcheckPath = "/health"
+restartPolicyType = "ALWAYS"
