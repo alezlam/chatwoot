@@ -201,7 +201,12 @@ export class Session extends EventEmitter {
       this.log.info({ phone: this.phone }, 'connected');
       // Re-send what we know on every connect (cheap: Chatwoot only touches existing contacts), so names that
       // missed a deploy still land. Numbers linked before the directory existed get their contact list re-requested.
-      setTimeout(() => (this.directory.size ? this.shareDirectory(this.directoryEntries()) : this.resyncContacts()), 15_000);
+      setTimeout(() => {
+        if (!this.directory.size) return this.resyncContacts();
+        this.shareDirectory(this.directoryEntries());
+        // Photo lookups still owed from before a restart.
+        for (const e of this.directoryEntries()) if (e.chatted) this.queueAvatar(e.phone, e.lid);
+      }, 15_000);
     }
     if (connection !== 'close') return;
 
@@ -339,8 +344,10 @@ export class Session extends EventEmitter {
         push_name: identity.push_name || previous.push_name || null,
         avatar_url: identity.avatar_url ?? previous.avatar_url ?? null,
         avatar_checked_at: identity.avatar_checked_at ?? previous.avatar_checked_at ?? null,
+        // Someone we have a chat with (vs. the rest of the address book): only they get photo lookups.
+        chatted: identity.chatted || previous.chatted || false,
       };
-      const empty = { phone: null, lid: null, name: null, push_name: null, avatar_url: null, avatar_checked_at: null };
+      const empty = { phone: null, lid: null, name: null, push_name: null, avatar_url: null, avatar_checked_at: null, chatted: false };
       if (JSON.stringify(next) === JSON.stringify({ ...empty, ...previous })) continue;
       this.directory.set(key, next);
       // Keep the "@lid" alias pointing at the same entry, so lookups by either id agree.
@@ -448,6 +455,7 @@ export class Session extends EventEmitter {
   // Looks up the contact's profile photo (only people we chat with, never the whole address book).
   queueAvatar(phone, lid) {
     const key = phone ? `p:${phone}` : `l:${lid}`;
+    if (!this.directory.get(key)?.chatted) this.mergeDirectory([{ phone, lid, chatted: true }]);
     const checkedAt = this.directory.get(key)?.avatar_checked_at || 0;
     if (Date.now() - checkedAt < AVATAR_RECHECK_MS || this.avatarPending?.has(key)) return;
     (this.avatarPending ||= new Set()).add(key);
