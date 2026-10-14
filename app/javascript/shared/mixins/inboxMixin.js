@@ -140,6 +140,9 @@ export default {
     isATiktokChannel() {
       return this.channelType === INBOX_TYPES.TIKTOK;
     },
+    isAShopeeChannel() {
+      return this.channelType === INBOX_TYPES.SHOPEE;
+    },
   },
   methods: {
     inboxHasFeature(feature) {

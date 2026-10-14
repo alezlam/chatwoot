@@ -390,7 +390,8 @@ export default {
         this.isATelegramChannel ||
         this.isALineChannel ||
         this.isAnInstagramChannel ||
-        (this.isATiktokChannel && tiktokAttachmentSupported)
+        (this.isATiktokChannel && tiktokAttachmentSupported) ||
+        this.isAShopeeChannel
       );
     },
     replyButtonLabel() {
@@ -863,7 +864,8 @@ export default {
         // For TikTok, the API rejects messages that mix text and media.
         // To handle both cases, text and attachments are always sent as separate messages.
         const isOnInstagram = this.isAnInstagramChannel;
-        const isOnTiktok = this.isATiktokChannel;
+        // Shopee sends one image per message with no caption, like TikTok.
+        const isOnTiktok = this.isATiktokChannel || this.isAShopeeChannel;
         if ((isOnWhatsApp || isOnInstagram || isOnTiktok) && !this.isPrivate) {
           this.sendMessageAsMultipleMessages(
             this.message,
@@ -1155,7 +1157,11 @@ export default {
 
       if (this.attachedFiles && this.attachedFiles.length) {
         let caption =
-          this.isAnInstagramChannel || this.isATiktokChannel ? '' : message;
+          this.isAnInstagramChannel ||
+          this.isATiktokChannel ||
+          this.isAShopeeChannel
+            ? ''
+            : message;
         this.attachedFiles.forEach(attachment => {
           const attachedFile = this.globalConfig.directUploadsEnabled
             ? attachment.blobSignedId
@@ -1181,9 +1187,15 @@ export default {
       // For Instagram and TikTok, text must always be sent as a separate message (no captions on attachments).
       // For WhatsApp, we only need a text message if there are no attachments.
       if (
-        ((this.isAnInstagramChannel || this.isATiktokChannel) &&
+        ((this.isAnInstagramChannel ||
+          this.isATiktokChannel ||
+          this.isAShopeeChannel) &&
           this.message) ||
-        (!(this.isAnInstagramChannel || this.isATiktokChannel) &&
+        (!(
+          this.isAnInstagramChannel ||
+          this.isATiktokChannel ||
+          this.isAShopeeChannel
+        ) &&
           hasNoAttachments)
       ) {
         let messagePayload = {

@@ -180,7 +180,11 @@ export default {
     },
     showAudioRecorderButton() {
       if (this.isEditorDisabled) return false;
-      if (this.isALineChannel || this.isATiktokChannel) {
+      if (
+        this.isALineChannel ||
+        this.isATiktokChannel ||
+        this.isAShopeeChannel
+      ) {
         return false;
       }
       // Disable audio recorder for safari browser as recording is not supported
@@ -207,6 +211,9 @@ export default {
       if (this.isOnPrivateNote) {
         return getAllowedFileTypesByChannel();
       }
+
+      // @chatwoot/utils has no Shopee entry; Shopee chat takes only JPG/PNG images.
+      if (this.isAShopeeChannel) return 'image/jpeg,image/png';
 
       let channelType = this.channelType || this.inbox?.channel_type;
       if (this.isAnInstagramChannel || this.isInstagramDM) {

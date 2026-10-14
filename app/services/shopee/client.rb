@@ -103,6 +103,16 @@ class Shopee::Client
     post('/api/v2/sellerchat/send_message', to_id: to_id.to_i, message_type: 'text', content: { text: text })
   end
 
+  def send_image(to_id, image_url)
+    post('/api/v2/sellerchat/send_message', to_id: to_id.to_i, message_type: 'image', content: { image_url: image_url })
+  end
+
+  # Chat images must be hosted by Shopee: upload first, then send the returned url.
+  def upload_image(file)
+    path = '/api/v2/sellerchat/upload_image'
+    self.class.parse(HTTParty.post("#{self.class.host}#{path}", query: signed_query(path), multipart: true, body: { file: file }))['url']
+  end
+
   private
 
   def get(path, params = {})
