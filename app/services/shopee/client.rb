@@ -26,12 +26,18 @@ class Shopee::Client
       partner_id.positive? && partner_key.present?
     end
 
+    # Read from ENV, not GlobalConfigService: that copies a value into the database on first read,
+    # so a later change to the Railway variable would never take effect.
     def partner_id
-      GlobalConfigService.load('SHOPEE_PARTNER_ID', 0).to_i
+      ENV.fetch('SHOPEE_PARTNER_ID', 0).to_i
     end
 
     def partner_key
-      GlobalConfigService.load('SHOPEE_PARTNER_KEY', '').to_s.strip
+      ENV.fetch('SHOPEE_PARTNER_KEY', '').strip
+    end
+
+    def push_partner_key
+      ENV.fetch('SHOPEE_PUSH_PARTNER_KEY', '').strip
     end
 
     def sign(base)
@@ -55,7 +61,7 @@ class Shopee::Client
     end
 
     def host
-      HOSTS.fetch(GlobalConfigService.load('SHOPEE_ENV', 'live'))
+      HOSTS.fetch(ENV.fetch('SHOPEE_ENV', 'live'))
     end
 
     def parse(response)

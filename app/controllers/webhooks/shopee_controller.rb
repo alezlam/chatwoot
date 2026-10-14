@@ -26,7 +26,7 @@ class Webhooks::ShopeeController < ActionController::API
   end
 
   def verify_signature!
-    key = GlobalConfigService.load('SHOPEE_PUSH_PARTNER_KEY', '').to_s.strip
+    key = Shopee::Client.push_partner_key
     return head :unauthorized if key.blank?
 
     # Shopee signs the public URL it posted to, not the internal host the request reached.
