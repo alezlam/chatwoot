@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_14_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -657,6 +657,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_29_100000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["line_channel_id"], name: "index_channel_line_on_line_channel_id", unique: true
+  end
+
+  create_table "channel_shopee", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.bigint "shop_id", null: false
+    t.string "access_token", null: false
+    t.datetime "expires_at", null: false
+    t.string "refresh_token", null: false
+    t.datetime "refresh_token_expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id"], name: "index_channel_shopee_on_shop_id", unique: true
   end
 
   create_table "channel_sms", force: :cascade do |t|

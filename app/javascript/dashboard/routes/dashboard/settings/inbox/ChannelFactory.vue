@@ -12,6 +12,7 @@ import Line from './channels/Line.vue';
 import Telegram from './channels/Telegram.vue';
 import Instagram from './channels/Instagram.vue';
 import Tiktok from './channels/Tiktok.vue';
+import Shopee from './channels/Shopee.vue';
 import Voice from './channels/Voice.vue';
 
 const channelViewList = {
@@ -27,6 +28,7 @@ const channelViewList = {
   telegram: Telegram,
   instagram: Instagram,
   tiktok: Tiktok,
+  shopee: Shopee,
   voice: Voice,
 };
 

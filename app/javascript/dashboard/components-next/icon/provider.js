@@ -19,6 +19,7 @@ const channelTypeIconMap = {
   'Channel::Whatsapp': 'i-woot-whatsapp',
   'Channel::Instagram': 'i-woot-instagram',
   'Channel::Tiktok': 'i-woot-tiktok',
+  'Channel::Shopee': 'i-ri-shopping-bag-3-line',
 };
 
 const providerIconMap = {

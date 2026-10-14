@@ -124,6 +124,11 @@ export const FORMATTING = {
     nodes: [],
     menu: [],
   },
+  'Channel::Shopee': {
+    marks: [],
+    nodes: [],
+    menu: [],
+  },
   // Special contexts (not actual channels)
   'Context::PrivateNote': {
     marks: ['strong', 'em', 'code', 'link', 'strike'],

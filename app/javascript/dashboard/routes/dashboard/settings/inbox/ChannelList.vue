@@ -93,6 +93,15 @@ const channelList = computed(() => {
     });
   }
 
+  if (window.chatwootConfig?.shopeePartnerId) {
+    channels.push({
+      key: 'shopee',
+      title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.SHOPEE.TITLE'),
+      description: t('INBOX_MGMT.ADD.AUTH.CHANNEL.SHOPEE.DESCRIPTION'),
+      icon: 'i-ri-shopping-bag-3-line',
+    });
+  }
+
   channels.push({
     key: 'voice',
     title: t('INBOX_MGMT.ADD.AUTH.CHANNEL.VOICE.TITLE'),
