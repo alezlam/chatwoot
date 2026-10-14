@@ -67,6 +67,12 @@ if resource.tiktok?
   json.reauthorization_required resource.channel.try(:reauthorization_required?)
 end
 
+## Shopee Attributes
+if resource.shopee?
+  json.shop_id resource.channel.try(:shop_id)
+  json.reauthorization_required resource.channel.try(:reauthorization_required?)
+end
+
 ## Twitter Attributes
 json.profile_id resource.channel.try(:profile_id) if resource.twitter?
 

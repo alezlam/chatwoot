@@ -68,6 +68,7 @@ const isActive = computed(() => {
     'line',
     'instagram',
     'tiktok',
+    'shopee',
     'voice',
   ].includes(key);
 });
