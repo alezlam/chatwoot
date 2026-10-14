@@ -1,4 +1,5 @@
-# Shopee push mechanism. Signature = HMAC-SHA256(partner_key, "<push url>|<raw body>") in the Authorization header.
+# Shopee push mechanism. Signature = HMAC-SHA256(push partner key, "<push url>|<raw body>") in the Authorization header.
+# The push partner key is its own key in the Shopee console, not the API partner key.
 # Push codes: 1 shop authorization, 3 order status, 10 webchat message, 12 item promotion. Only chat is handled.
 class Webhooks::ShopeeController < ActionController::API
   WEBCHAT_PUSH = 10
@@ -16,7 +17,7 @@ class Webhooks::ShopeeController < ActionController::API
   private
 
   def verify_signature!
-    key = Shopee::Client.partner_key
+    key = GlobalConfigService.load('SHOPEE_PUSH_PARTNER_KEY', '').to_s.strip
     return head :unauthorized if key.blank?
 
     # Shopee signs the public URL it posted to, not the internal host the request reached.
