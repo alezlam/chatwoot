@@ -2,10 +2,14 @@
 #
 # History is not live traffic, so messages and conversations are bulk inserted, which skips the
 # model callbacks: no agent notifications, automations, assignment, webhooks or unread counts.
-# Each contact gets one resolved conversation that reopens through the normal flow on a new message.
+# Each contact gets one conversation: open when its last message is within BAILEYS_HISTORY_OPEN_DAYS
+# (default 7), so active customers show in the Open view right after linking; resolved otherwise.
+# Baileys inboxes lock to a single conversation, so a new message reopens a resolved one.
 # Media starts as a text placeholder (plus its caption) and is attached in the background by
 # Channels::Whatsapp::BaileysHistoryMediaJob, which also repairs placeholders when the history is sent again.
 class Whatsapp::BaileysHistoryImportService
+  OPEN_DAYS = ENV.fetch('BAILEYS_HISTORY_OPEN_DAYS', 7).to_i
+
   pattr_initialize [:inbox!, :messages!]
 
   def perform
@@ -64,7 +68,8 @@ class Whatsapp::BaileysHistoryImportService
     Conversation.insert!( # rubocop:disable Rails/SkipsModelValidations
       {
         account_id: inbox.account_id, inbox_id: inbox.id, contact_id: contact_inbox.contact_id, contact_inbox_id: contact_inbox.id,
-        status: Conversation.statuses[:resolved], created_at: first_at, updated_at: last_at, last_activity_at: last_at,
+        status: Conversation.statuses[last_at > OPEN_DAYS.days.ago ? :open : :resolved],
+        created_at: first_at, updated_at: last_at, last_activity_at: last_at,
         agent_last_seen_at: Time.current, assignee_last_seen_at: Time.current, additional_attributes: {}, custom_attributes: {}
       },
       returning: %w[id]

@@ -171,8 +171,10 @@ export class Session extends EventEmitter {
       keepAliveIntervalMs: 30_000,
       // Not "online" on connect: keeps notifications flowing to the phone.
       markOnlineOnConnect: false,
-      // The phone streams its chat history once, right after a fresh link (messaging-history.set).
-      syncFullHistory: HISTORY_DAYS > 0,
+      // The phone streams its recent chat history once, right after a fresh link (messaging-history.set).
+      // Not a full sync: that makes the phone upload years of chats before we keep the last HISTORY_DAYS.
+      syncFullHistory: false,
+      shouldSyncHistoryMessage: () => HISTORY_DAYS > 0,
     });
     this.sock = sock;
     const current = () => this.sock === sock;

@@ -31,6 +31,8 @@ const createChannel = async () => {
   try {
     const inbox = await store.dispatch('inboxes/createChannel', {
       name: inboxName.value.trim(),
+      // One thread per contact, like WhatsApp: a new message reopens the imported (resolved) history.
+      lock_to_single_conversation: true,
       channel: {
         type: 'whatsapp',
         phone_number: phoneNumber.value,
