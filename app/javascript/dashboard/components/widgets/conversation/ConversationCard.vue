@@ -58,7 +58,8 @@ const showMetaSection = computed(() => {
   return (
     props.showInboxName ||
     (props.showAssignee && props.assignee.name) ||
-    props.chat.priority
+    props.chat.priority ||
+    hasReplyDraft.value
   );
 });
 

@@ -30,16 +30,21 @@ class Captain::ReplyDraft < ApplicationRecord
   after_commit :dispatch_updated, on: [:create, :update]
   after_commit :dispatch_deleted, on: :destroy
 
+  # conversation_id is the display id: the dashboard keys conversations by display_id, not the DB id.
   def push_event_data
     {
       id: id,
-      conversation_id: conversation_id,
+      conversation_id: conversation.display_id,
       inbox_id: conversation.inbox_id,
       product_id: product_id,
       product_name: product&.name,
       content: content,
       updated_at: updated_at.to_i
     }
+  end
+
+  def deleted_event_data
+    { id: id, conversation_id: conversation.display_id }
   end
 
   private

@@ -16,7 +16,7 @@ module Enterprise::ActionCableListener
 
   def captain_reply_draft_deleted(event)
     draft = event.data[:reply_draft]
-    broadcast(draft.account, reply_draft_tokens(draft), CAPTAIN_REPLY_DRAFT_DELETED, { id: draft.id, conversation_id: draft.conversation_id })
+    broadcast(draft.account, reply_draft_tokens(draft), CAPTAIN_REPLY_DRAFT_DELETED, draft.deleted_event_data)
   end
 
   private
