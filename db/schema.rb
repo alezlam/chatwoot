@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_23_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -542,6 +542,39 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_000001) do
     t.index ["conversation_id"], name: "index_captain_message_reports_on_conversation_id"
     t.index ["message_id"], name: "index_captain_message_reports_on_message_id"
     t.index ["user_id"], name: "index_captain_message_reports_on_user_id"
+  end
+
+  create_table "captain_products", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "assistant_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.text "prompt"
+    t.text "context"
+    t.string "shopee_item_id"
+    t.boolean "enabled", default: true, null: false
+    t.vector "embedding", limit: 1536
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_products_on_account_id"
+    t.index ["assistant_id", "shopee_item_id"], name: "idx_captain_products_on_assistant_shopee_item", unique: true, where: "(shopee_item_id IS NOT NULL)"
+    t.index ["assistant_id"], name: "index_captain_products_on_assistant_id"
+    t.index ["embedding"], name: "vector_idx_captain_products_embedding", opclass: :vector_cosine_ops, using: :ivfflat
+  end
+
+  create_table "captain_reply_drafts", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "conversation_id", null: false
+    t.bigint "assistant_id", null: false
+    t.bigint "product_id"
+    t.bigint "last_message_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_reply_drafts_on_account_id"
+    t.index ["assistant_id"], name: "index_captain_reply_drafts_on_assistant_id"
+    t.index ["conversation_id"], name: "index_captain_reply_drafts_on_conversation_id", unique: true
+    t.index ["product_id"], name: "index_captain_reply_drafts_on_product_id"
   end
 
   create_table "captain_scenarios", force: :cascade do |t|
