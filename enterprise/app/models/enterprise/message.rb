@@ -27,6 +27,11 @@ module Enterprise::Message
     self.class.captain_response_triggering.exists?(id: id)
   end
 
+  # A human reply to the buyer (dashboard, channel echo, or a sent draft); automation, campaign and bot messages are not.
+  def captain_human_reply?
+    !private? && human_response?
+  end
+
   private
 
   def execute_after_create_commit_callbacks
@@ -34,9 +39,8 @@ module Enterprise::Message
     delete_captain_reply_draft
   end
 
-  # Any reply to the buyer (dashboard, channel echo, or the draft itself) makes the draft stale.
   def delete_captain_reply_draft
-    return unless outgoing? && !private?
+    return unless captain_human_reply?
 
     Captain::ReplyDraft.find_by(conversation_id: conversation_id)&.destroy!
   end

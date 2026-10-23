@@ -1,6 +1,8 @@
 # Draft mode: writes one reply draft per conversation for a human to review. It never creates a message,
 # never hands off and never changes the conversation, so a failure only means there is no draft.
 class Captain::Conversation::DraftReplyJob < ApplicationJob
+  # generate_response rescues its own errors, but the message history build outside it transcribes audio
+  # (blob download + OpenAI call), which can raise either of these.
   retry_on ActiveStorage::FileNotFoundError, attempts: 3, wait: 2.seconds
   retry_on Faraday::BadRequestError, attempts: 3, wait: 2.seconds
 
@@ -44,13 +46,13 @@ class Captain::Conversation::DraftReplyJob < ApplicationJob
     )
   end
 
-  # A newer buyer message gets its own draft; a human reply already answered this one.
+  # A newer buyer message gets its own draft; a human reply (not automation or a bot) already answered this one.
   def superseded?
     return false if @responding_to_message_id.blank?
 
     Conversation.uncached do
       newer = @conversation.messages.where('messages.id > ?', @responding_to_message_id)
-      newer.captain_response_triggering.exists? || newer.outgoing.exists?(private: false)
+      newer.captain_response_triggering.exists? || newer.outgoing.where(private: false).includes(:sender).any?(&:captain_human_reply?)
     end
   end
 

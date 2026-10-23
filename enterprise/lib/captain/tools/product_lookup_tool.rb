@@ -28,6 +28,7 @@ class Captain::Tools::ProductLookupTool < Captain::Tools::BasePublicTool
     <<~PRODUCT
       Product result:
       Name: #{product.name}
+      Shopee item id: #{product.shopee_item_id}
       Description: #{product.description}
       How to answer about this product: #{product.prompt}
       Context: #{product.context}

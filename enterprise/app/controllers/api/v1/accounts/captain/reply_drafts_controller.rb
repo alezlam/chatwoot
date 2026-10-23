@@ -10,11 +10,20 @@ class Api::V1::Accounts::Captain::ReplyDraftsController < Api::V1::Accounts::Bas
                                        .order(updated_at: :desc)
   end
 
+  # The row lock makes a second Send (two tabs, a retry) wait, then find the draft gone and get 409.
+  # Message and draft deletion commit together, so a failed message keeps the draft.
   def send_reply
-    @message = Messages::MessageBuilder.new(
-      Current.user, @reply_draft.conversation, { content: params[:content].presence || @reply_draft.content }
-    ).perform
+    @reply_draft.with_lock do
+      @message = Messages::MessageBuilder.new(
+        Current.user, @reply_draft.conversation, { content: params[:content].presence || @reply_draft.content }
+      ).perform
+      @reply_draft.destroy!
+    end
     render 'api/v1/accounts/conversations/messages/create'
+  rescue ActiveRecord::RecordNotFound
+    head :conflict
+  rescue StandardError => e
+    render_could_not_create_error(e.message)
   end
 
   def destroy

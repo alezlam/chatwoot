@@ -27,7 +27,13 @@ class Captain::Product < ApplicationRecord
 
   belongs_to :account
   belongs_to :assistant, class_name: 'Captain::Assistant'
+  # ponytail: untuned until the live LLM check; cosine distance runs 0 (same) to 2 (opposite).
+  MAX_SEARCH_DISTANCE = 0.6
+
   has_neighbors :embedding, normalize: true
+
+  # Blank must be NULL: the unique index only excludes NULL, so two '' rows would collide.
+  normalizes :shopee_item_id, with: ->(value) { value.to_s.strip.presence }
 
   validates :name, presence: true
   validates :shopee_item_id, uniqueness: { scope: :assistant_id }, allow_blank: true
@@ -39,6 +45,7 @@ class Captain::Product < ApplicationRecord
   def self.search(query, assistant:)
     embedding = Captain::Llm::EmbeddingService.new(account_id: assistant.account_id).get_embedding(query)
     enabled.where(assistant_id: assistant.id).nearest_neighbors(:embedding, embedding, distance: 'cosine').limit(3)
+           .select { |product| product.neighbor_distance <= MAX_SEARCH_DISTANCE }
   end
 
   def embedding_text

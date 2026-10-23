@@ -19,5 +19,6 @@ Use the `captain--tools--product_lookup` tool when the customer asks about a pro
 {% endif -%}
 {% if products_enabled or draft -%}
 Never state product facts that are not in the current product, product lookup results or FAQs.
+If the customer shared a product card whose item id matches no product here or in product lookup results, treat it as an unknown product and ask what they want to know instead of describing a different product.
 
 {% endif -%}
