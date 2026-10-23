@@ -418,6 +418,64 @@
     }
   },
   "CAPTAIN": {
+    "PRODUCTS": {
+      "TITLE": "Products",
+      "ADD_NEW": "Add product",
+      "SEARCH_PLACEHOLDER": "Search products",
+      "EMPTY_MESSAGE": "No products yet. Add a product so Captain can draft replies about it.",
+      "SEARCH_EMPTY_MESSAGE": "No products match your search.",
+      "SHOPEE_ITEM": "Shopee item {id}",
+      "BACK": "Back to products",
+      "CREATE": {
+        "TITLE": "Add product",
+        "DESCRIPTION": "Give the product a name and a short description. You can add the rest on the next page.",
+        "SUBMIT": "Create product",
+        "CANCEL": "Cancel",
+        "SUCCESS_MESSAGE": "Product created.",
+        "ERROR_MESSAGE": "Could not create the product. Please try again."
+      },
+      "FORM": {
+        "NAME": {
+          "LABEL": "Name",
+          "PLACEHOLDER": "Enter the product name"
+        },
+        "SHOPEE_ITEM_ID": {
+          "LABEL": "Shopee item ID",
+          "PLACEHOLDER": "Enter the Shopee item ID"
+        },
+        "DESCRIPTION": {
+          "LABEL": "Description",
+          "PLACEHOLDER": "What this item is"
+        },
+        "PROMPT": {
+          "LABEL": "Prompt",
+          "PLACEHOLDER": "How to answer about this item"
+        },
+        "CONTEXT": {
+          "LABEL": "Context",
+          "PLACEHOLDER": "Product facts"
+        },
+        "ENABLED": "Enabled",
+        "SAVE": "Save",
+        "DELETE": "Delete",
+        "ADMIN_ONLY": "Only administrators can change products."
+      },
+      "UPDATE": {
+        "SUCCESS_MESSAGE": "Product saved.",
+        "ERROR_MESSAGE": "Could not save the product. Please try again."
+      },
+      "TOGGLE": {
+        "ERROR_MESSAGE": "Could not update the product. Please try again."
+      },
+      "LOAD_ERROR": "Could not load the products.",
+      "DELETE": {
+        "TITLE": "Delete this product?",
+        "DESCRIPTION": "Captain will no longer use this product to draft replies. This cannot be undone.",
+        "CONFIRM": "Delete",
+        "SUCCESS_MESSAGE": "Product deleted.",
+        "ERROR_MESSAGE": "Could not delete the product. Please try again."
+      }
+    },
     "NAME": "Captain",
     "HEADER_KNOW_MORE": "Know more",
     "OVERVIEW": {
@@ -784,6 +842,7 @@
       },
       "FORM": {
         "UPDATE": "Update",
+        "REPLY_MODE_DRAFT": "Reply mode: Draft (owner approves every reply)",
         "SECTIONS": {
           "BASIC_INFO": "Basic Information",
           "SYSTEM_MESSAGES": "System Messages",

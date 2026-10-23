@@ -24,6 +24,8 @@ import DocumentsIndex from './documents/Index.vue';
 import ResponsesIndex from './responses/Index.vue';
 import FaqSuggestionsIndex from './responses/FaqSuggestions.vue';
 import CustomToolsIndex from './tools/Index.vue';
+import ProductsIndex from './products/Index.vue';
+import ProductsShow from './products/Show.vue';
 
 const meta = {
   permissions: ['administrator', 'agent'],
@@ -84,6 +86,20 @@ const assistantRoutes = [
     component: CustomToolsIndex,
     name: 'captain_tools_index',
     meta: metaCustomTools,
+  },
+  {
+    path: frontendURL('accounts/:accountId/captain/:assistantId/products'),
+    component: ProductsIndex,
+    name: 'captain_assistants_products_index',
+    meta,
+  },
+  {
+    path: frontendURL(
+      'accounts/:accountId/captain/:assistantId/products/:productId'
+    ),
+    component: ProductsShow,
+    name: 'captain_assistants_products_show',
+    meta,
   },
   {
     path: frontendURL('accounts/:accountId/captain/:assistantId/scenarios'),

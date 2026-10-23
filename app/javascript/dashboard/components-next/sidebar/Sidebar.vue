@@ -515,6 +515,17 @@ const menuItems = computed(() => {
       activeOn: ['captain_assistants_create_index'],
       children: [
         {
+          name: 'Products',
+          label: t('SIDEBAR.CAPTAIN_PRODUCTS'),
+          activeOn: [
+            'captain_assistants_products_index',
+            'captain_assistants_products_show',
+          ],
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_products_index',
+          }),
+        },
+        {
           name: 'Overview',
           label: t('SIDEBAR.CAPTAIN_OVERVIEW'),
           activeOn: ['captain_assistants_overview_index'],

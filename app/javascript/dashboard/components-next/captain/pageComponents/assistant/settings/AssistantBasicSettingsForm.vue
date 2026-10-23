@@ -149,6 +149,10 @@ watch(
       </div>
     </div>
 
+    <p class="text-sm text-n-slate-11">
+      {{ t('CAPTAIN.ASSISTANTS.FORM.REPLY_MODE_DRAFT') }}
+    </p>
+
     <div>
       <Button
         :label="t('CAPTAIN.ASSISTANTS.FORM.UPDATE')"
