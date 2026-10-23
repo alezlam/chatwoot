@@ -8,4 +8,20 @@ module Enterprise::ActionCableListener
 
     broadcast(account, [user.pubsub_token], COPILOT_MESSAGE_CREATED, copilot_message.push_event_data)
   end
+
+  def captain_reply_draft_updated(event)
+    draft = event.data[:reply_draft]
+    broadcast(draft.account, reply_draft_tokens(draft), CAPTAIN_REPLY_DRAFT_UPDATED, draft.push_event_data)
+  end
+
+  def captain_reply_draft_deleted(event)
+    draft = event.data[:reply_draft]
+    broadcast(draft.account, reply_draft_tokens(draft), CAPTAIN_REPLY_DRAFT_DELETED, { id: draft.id, conversation_id: draft.conversation_id })
+  end
+
+  private
+
+  def reply_draft_tokens(draft)
+    user_tokens(draft.account, draft.conversation.inbox.members)
+  end
 end

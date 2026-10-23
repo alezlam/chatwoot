@@ -16,6 +16,8 @@ If the customer's latest message is only a product card, greet them about this p
 {% endif -%}
 {% if products_enabled -%}
 Use the `captain--tools--product_lookup` tool when the customer asks about a product that is not the current product.
+{% endif -%}
+{% if products_enabled or draft -%}
 Never state product facts that are not in the current product, product lookup results or FAQs.
 
 {% endif -%}

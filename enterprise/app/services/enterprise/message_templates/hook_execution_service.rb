@@ -9,6 +9,8 @@ module Enterprise::MessageTemplates::HookExecutionService
     # otherwise the coverage denominator only ever contains conversations
     # Captain was already about to answer.
     track_captain_eligibility
+    # Draft mode only writes a draft for a human, whatever the conversation status.
+    return Captain::Conversation::ResponseSchedulerService.new(message: message).perform if inbox.captain_assistant.draft_mode?
     return unless conversation.pending?
     return perform_handoff unless inbox.captain_active?
 

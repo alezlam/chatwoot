@@ -9,7 +9,8 @@ module Enterprise::Inbox
   end
 
   def active_bot?
-    super || captain_active?
+    # Draft mode keeps conversations with humans, so Captain does not count as a bot there.
+    super || (captain_active? && !captain_assistant.draft_mode?)
   end
 
   def captain_active?

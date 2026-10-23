@@ -12,7 +12,7 @@ If you believe the user's request is not within the scope of your role, you can 
 
 {% render 'current_time', current_time: current_time %}
 
-{% render 'core_rules' %}
+{% render 'core_rules', draft: draft %}
 
 {% if playground_knowledge -%}
 # Playground Reference Material
@@ -42,7 +42,7 @@ Here's the metadata we have about the current conversation and the contact assoc
 {% endif -%}
 
 
-{% render 'current_product', current_product: current_product, products_enabled: products_enabled -%}
+{% render 'current_product', current_product: current_product, products_enabled: products_enabled, draft: draft -%}
 {% if response_guidelines.size > 0 -%}
 # Response Guidelines
 Your responses should follow these guidelines:

@@ -29,11 +29,24 @@ module Enterprise::Message
 
   private
 
+  def execute_after_create_commit_callbacks
+    super
+    delete_captain_reply_draft
+  end
+
+  # Any reply to the buyer (dashboard, channel echo, or the draft itself) makes the draft stale.
+  def delete_captain_reply_draft
+    return unless outgoing? && !private?
+
+    Captain::ReplyDraft.find_by(conversation_id: conversation_id)&.destroy!
+  end
+
   def reopen_resolved_conversation
     assistant = conversation.inbox.captain_assistant
 
     return super if assistant.blank? || conversation.inbox.external_bot_active?
-    return conversation.open! unless assistant.engages?(conversation.contact, conversation)
+    # Draft mode never hands a reopened conversation to Captain.
+    return conversation.open! if assistant.draft_mode? || !assistant.engages?(conversation.contact, conversation)
 
     super
   end
