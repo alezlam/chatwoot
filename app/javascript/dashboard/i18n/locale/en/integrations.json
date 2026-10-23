@@ -418,6 +418,15 @@
     }
   },
   "CAPTAIN": {
+    "REPLY_DRAFT": {
+      "LABEL": "Draft reply",
+      "SEND": "Send",
+      "EDIT": "Edit",
+      "DISCARD": "Discard",
+      "BADGE": "Draft",
+      "SEND_ERROR": "Could not send the draft reply. Please try again.",
+      "DISCARD_ERROR": "Could not discard the draft reply. Please try again."
+    },
     "PRODUCTS": {
       "TITLE": "Products",
       "ADD_NEW": "Add product",

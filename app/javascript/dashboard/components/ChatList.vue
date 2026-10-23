@@ -834,6 +834,7 @@ onMounted(() => {
   setFiltersFromUISettings();
   store.dispatch('setChatStatusFilter', activeStatus.value);
   store.dispatch('setChatSortFilter', activeSortBy.value);
+  store.dispatch('captainReplyDrafts/get');
   if (!applyRouteFilters()) resetAndFetchData();
   if (hasActiveFolders.value) {
     store.dispatch('campaigns/get');

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
+import { useMapGetter } from 'dashboard/composables/store';
 import { getLastMessage } from 'dashboard/helper/conversationHelper';
 import Avatar from 'next/avatar/Avatar.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
@@ -34,6 +35,9 @@ const emit = defineEmits([
 ]);
 
 const hovered = ref(false);
+
+const getReplyDraft = useMapGetter('captainReplyDrafts/getByConversationId');
+const hasReplyDraft = computed(() => !!getReplyDraft.value(props.chat.id));
 
 const unreadCount = computed(() => props.chat.unread_count);
 const hasUnread = computed(() => unreadCount.value > 0);
@@ -171,6 +175,12 @@ watch(
               class="size-3 text-n-slate-11 flex-shrink-0"
             />
             <span class="truncate">{{ assignee.name }}</span>
+          </span>
+          <span
+            v-if="hasReplyDraft"
+            class="text-n-iris-11 bg-n-iris-3 text-xs font-medium leading-3 py-0.5 px-1.5 rounded-md flex-shrink-0"
+          >
+            {{ $t('CAPTAIN.REPLY_DRAFT.BADGE') }}
           </span>
           <CardPriorityIcon
             :priority="chat.priority"
