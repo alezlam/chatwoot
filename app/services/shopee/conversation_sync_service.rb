@@ -68,7 +68,11 @@ class Shopee::ConversationSyncService
       inbox_id: inbox.id,
       message_type: outgoing ? :outgoing : :incoming,
       source_id: shopee_message['message_id'].to_s,
-      content_attributes: { external_echo: (true if outgoing), is_unsupported: (true unless supported) }.compact,
+      content_attributes: {
+        external_echo: (true if outgoing),
+        is_unsupported: (true unless supported),
+        shopee_item_id: (shopee_message.dig('content', 'item_id')&.to_s if shopee_message['message_type'] == 'item')
+      }.compact,
       created_at: at,
       updated_at: at
     )
