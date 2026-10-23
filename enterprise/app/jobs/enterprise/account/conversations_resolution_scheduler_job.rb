@@ -13,7 +13,8 @@ module Enterprise::Account::ConversationsResolutionSchedulerJob
       assistant = captain_inbox.captain_assistant
 
       next if inbox.email? || inbox.external_bot_active?
-      next if assistant.blank? || assistant.inactive_conversation_resolution_disabled?
+      # Draft mode never changes conversation state, so Captain does not auto-resolve there.
+      next if assistant.blank? || assistant.draft_mode? || assistant.inactive_conversation_resolution_disabled?
 
       Captain::InboxPendingConversationsResolutionJob.perform_later(
         inbox

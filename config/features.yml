@@ -114,8 +114,7 @@
   premium: true
 - name: custom_tools
   display_name: Custom Tools
-  enabled: false
-  premium: true
+  enabled: true
 - name: message_reply_to
   display_name: Message Reply To
   enabled: false
@@ -142,8 +141,7 @@
   enabled: false
 - name: captain_integration
   display_name: Captain
-  enabled: false
-  premium: true
+  enabled: true
 - name: custom_roles
   display_name: Custom Roles
   enabled: false

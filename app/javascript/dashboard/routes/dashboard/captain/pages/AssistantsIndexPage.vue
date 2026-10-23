@@ -53,6 +53,7 @@ const routeToLastActiveAssistant = () => {
 
   const { navigationPath } = route.params;
   const isAValidRoute = [
+    'captain_assistants_products_index', // Products page
     'captain_assistants_overview_index', // Overview page
     'captain_assistants_responses_index', // Faq page
     'captain_assistants_documents_index', // Document page

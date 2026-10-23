@@ -834,6 +834,8 @@ onMounted(() => {
   setFiltersFromUISettings();
   store.dispatch('setChatStatusFilter', activeStatus.value);
   store.dispatch('setChatSortFilter', activeSortBy.value);
+  // Drafts are optional: without them the list just shows no draft badges.
+  store.dispatch('captainReplyDrafts/get').catch(() => {});
   if (!applyRouteFilters()) resetAndFetchData();
   if (hasActiveFolders.value) {
     store.dispatch('campaigns/get');

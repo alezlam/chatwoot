@@ -16,7 +16,7 @@
 #
 #  index_captain_assistants_on_account_id  (account_id)
 #
-class Captain::Assistant < ApplicationRecord
+class Captain::Assistant < ApplicationRecord # rubocop:disable Metrics/ClassLength
   DESCRIPTION_LENGTH_LIMIT = 500
   CITATION_SOURCES_STATE_KEY = :captain_v2_citation_sources
   AUTO_RESOLVE_MODES = %w[disabled legacy evaluated].freeze
@@ -25,6 +25,7 @@ class Captain::Assistant < ApplicationRecord
   MAXIMUM_INACTIVITY_THRESHOLD_MINUTES = 1.day.in_minutes.to_i
   INACTIVITY_THRESHOLD_STEP_MINUTES = 5
   RESPONSE_WINDOWS = %w[always business_hours outside_business_hours].freeze
+  REPLY_MODES = %w[draft auto].freeze
 
   include Avatarable
   include Concerns::CaptainToolsHelpers
@@ -48,11 +49,13 @@ class Captain::Assistant < ApplicationRecord
   has_many :scenarios, class_name: 'Captain::Scenario', dependent: :destroy_async
   has_many :agent_sessions, class_name: 'Captain::AgentSession', dependent: :destroy_async
   has_many :conversation_outcomes, dependent: :destroy_async
+  has_many :products, class_name: 'Captain::Product', dependent: :destroy_async
+  has_many :reply_drafts, class_name: 'Captain::ReplyDraft', dependent: :delete_all
   has_many :assigned_conversations, as: :ai_assignee, class_name: '::Conversation', foreign_key: :assignee_agent_bot_id,
                                     dependent: :nullify, inverse_of: :ai_assignee
 
   store_accessor :config, :temperature, :feature_faq, :feature_memory, :feature_contact_attributes, :product_name,
-                 :auto_resolve_mode, :auto_resolve_after, :send_inactivity_resolution_message, :response_window
+                 :auto_resolve_mode, :auto_resolve_after, :send_inactivity_resolution_message, :response_window, :reply_mode
 
   before_validation :set_default_auto_resolve_mode, on: :create
   before_validation :normalize_auto_resolve_after
@@ -62,6 +65,7 @@ class Captain::Assistant < ApplicationRecord
   validates :account_id, presence: true
   validates_with Captain::AudienceValidator
   validate :validate_response_window
+  validates :reply_mode, inclusion: { in: REPLY_MODES }, allow_nil: true
   validates :auto_resolve_mode, inclusion: { in: AUTO_RESOLVE_MODES }
   validates :send_inactivity_resolution_message, inclusion: { in: [true, false] }
   validates :auto_resolve_after,
@@ -75,6 +79,9 @@ class Captain::Assistant < ApplicationRecord
   scope :ordered, -> { order(created_at: :desc) }
 
   scope :for_account, ->(account_id) { where(account_id: account_id) }
+
+  def draft_mode? = reply_mode.nil? || reply_mode == 'draft'
+  def products_enabled? = products.enabled.exists?
 
   def available_name
     name
@@ -206,6 +213,7 @@ class Captain::Assistant < ApplicationRecord
   def agent_tools
     [
       self.class.resolve_tool_class('faq_lookup').new(self),
+      *(self.class.resolve_tool_class('product_lookup').new(self) if products_enabled?),
       self.class.resolve_tool_class('handoff').new(self),
       *custom_tools.enabled.map { |custom_tool| custom_tool.tool(self) }
     ]
@@ -217,6 +225,7 @@ class Captain::Assistant < ApplicationRecord
       description: description,
       product_name: config['product_name'] || 'this product',
       citation_enabled: citations_enabled?,
+      products_enabled: products_enabled?,
       scenarios: scenarios.enabled.map do |scenario|
         {
           title: scenario.title,

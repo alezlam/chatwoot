@@ -9,12 +9,16 @@ class Captain::Conversation::ResponseSchedulerService
 
   def perform
     wait_time = attachment_wait_time
-    return Captain::Conversation::ResponseBuilderJob.perform_later(*job_args) if wait_time.zero?
+    return job_class.perform_later(*job_args) if wait_time.zero?
 
-    Captain::Conversation::ResponseBuilderJob.set(wait: wait_time).perform_later(*job_args)
+    job_class.set(wait: wait_time).perform_later(*job_args)
   end
 
   private
+
+  def job_class
+    @assistant.draft_mode? ? Captain::Conversation::DraftReplyJob : Captain::Conversation::ResponseBuilderJob
+  end
 
   def job_args
     [@conversation, @assistant, @message.id]

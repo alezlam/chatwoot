@@ -26,6 +26,8 @@ module Events::Types
   CAPTAIN_CONVERSATION_RESOLVED = 'captain.conversation.resolved'
   CAPTAIN_RESPONSE_COMPLETED = 'captain.response.completed'
   CAPTAIN_RESPONSE_FAILED = 'captain.response.failed'
+  CAPTAIN_REPLY_DRAFT_UPDATED = 'captain.reply_draft.updated'
+  CAPTAIN_REPLY_DRAFT_DELETED = 'captain.reply_draft.deleted'
 
   CONVERSATION_STATUS_CHANGED = 'conversation.status_changed'
   CONVERSATION_CONTACT_CHANGED = 'conversation.contact_changed'

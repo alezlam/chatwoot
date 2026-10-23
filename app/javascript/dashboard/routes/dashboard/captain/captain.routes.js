@@ -24,11 +24,17 @@ import DocumentsIndex from './documents/Index.vue';
 import ResponsesIndex from './responses/Index.vue';
 import FaqSuggestionsIndex from './responses/FaqSuggestions.vue';
 import CustomToolsIndex from './tools/Index.vue';
+import ProductsIndex from './products/Index.vue';
+import ProductsShow from './products/Show.vue';
 
 const meta = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: [
+    INSTALLATION_TYPES.CLOUD,
+    INSTALLATION_TYPES.ENTERPRISE,
+    INSTALLATION_TYPES.COMMUNITY,
+  ],
 };
 
 const faqSuggestionsMeta = {
@@ -39,13 +45,21 @@ const faqSuggestionsMeta = {
 const metaCustomTools = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN_CUSTOM_TOOLS,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: [
+    INSTALLATION_TYPES.CLOUD,
+    INSTALLATION_TYPES.ENTERPRISE,
+    INSTALLATION_TYPES.COMMUNITY,
+  ],
 };
 
 const metaV2 = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: [
+    INSTALLATION_TYPES.CLOUD,
+    INSTALLATION_TYPES.ENTERPRISE,
+    INSTALLATION_TYPES.COMMUNITY,
+  ],
 };
 
 const assistantRoutes = [
@@ -72,6 +86,20 @@ const assistantRoutes = [
     component: CustomToolsIndex,
     name: 'captain_tools_index',
     meta: metaCustomTools,
+  },
+  {
+    path: frontendURL('accounts/:accountId/captain/:assistantId/products'),
+    component: ProductsIndex,
+    name: 'captain_assistants_products_index',
+    meta,
+  },
+  {
+    path: frontendURL(
+      'accounts/:accountId/captain/:assistantId/products/:productId'
+    ),
+    component: ProductsShow,
+    name: 'captain_assistants_products_show',
+    meta,
   },
   {
     path: frontendURL('accounts/:accountId/captain/:assistantId/scenarios'),
@@ -163,6 +191,7 @@ const assistantRoutes = [
       installationTypes: [
         INSTALLATION_TYPES.CLOUD,
         INSTALLATION_TYPES.ENTERPRISE,
+        INSTALLATION_TYPES.COMMUNITY,
       ],
     },
   },

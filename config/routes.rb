@@ -100,6 +100,10 @@ Rails.application.routes.draw do
               end
               resources :inboxes, only: [:index, :create, :destroy], param: :inbox_id
               resources :scenarios
+              resources :products, only: [:index, :show, :create, :update, :destroy]
+            end
+            resources :reply_drafts, only: [:index, :destroy] do
+              post :send_reply, on: :member
             end
             resources :agent_sessions, only: [:show]
             resources :assistant_responses do

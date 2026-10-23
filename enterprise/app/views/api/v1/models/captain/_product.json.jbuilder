@@ -1,0 +1,10 @@
+json.id product.id
+json.assistant_id product.assistant_id
+json.name product.name
+json.description product.description
+json.prompt product.prompt
+json.context product.context
+json.shopee_item_id product.shopee_item_id
+json.enabled product.enabled
+json.created_at product.created_at.to_i
+json.updated_at product.updated_at.to_i

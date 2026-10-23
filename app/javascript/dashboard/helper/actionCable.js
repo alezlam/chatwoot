@@ -66,6 +66,8 @@ class ActionCableConnector extends BaseActionCableConnector {
       'account.enrichment_completed': this.onEnrichmentCompleted,
       'account.billing_updated': this.onBillingUpdated,
       'copilot.message.created': this.onCopilotMessageCreated,
+      'captain.reply_draft.updated': this.onCaptainReplyDraftUpdated,
+      'captain.reply_draft.deleted': this.onCaptainReplyDraftDeleted,
       'captain.playground.response': this.onCaptainPlaygroundResponse,
       'voice_call.incoming': this.onVoiceCallIncoming,
       'voice_call.accepted': this.onVoiceCallAccepted,
@@ -397,6 +399,19 @@ class ActionCableConnector extends BaseActionCableConnector {
 
   onNotificationUpdated = data => {
     this.app.$store.dispatch('notifications/updateNotification', data);
+  };
+
+  onCaptainReplyDraftUpdated = data => {
+    if (!this.isAValidEvent(data)) return;
+    this.app.$store.dispatch('captainReplyDrafts/upsert', data);
+  };
+
+  onCaptainReplyDraftDeleted = data => {
+    if (!this.isAValidEvent(data)) return;
+    this.app.$store.dispatch(
+      'captainReplyDrafts/removeByConversation',
+      data.conversation_id
+    );
   };
 
   onCopilotMessageCreated = data => {

@@ -9,18 +9,15 @@ module Enterprise::Inbox
   end
 
   def active_bot?
-    super || captain_active?
+    # Draft mode keeps conversations with humans, so Captain does not count as a bot there.
+    super || (captain_active? && !captain_assistant.draft_mode?)
   end
 
   def captain_active?
-    captain_assistant.present? && more_responses?
+    captain_assistant.present?
   end
 
   private
-
-  def more_responses?
-    account.usage_limits[:captain][:responses][:current_available].positive?
-  end
 
   def get_agent_ids_over_assignment_limit(limit)
     conversations

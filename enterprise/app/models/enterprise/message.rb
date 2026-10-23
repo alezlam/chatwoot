@@ -27,13 +27,30 @@ module Enterprise::Message
     self.class.captain_response_triggering.exists?(id: id)
   end
 
+  # A human reply to the buyer (dashboard, channel echo, or a sent draft); automation, campaign and bot messages are not.
+  def captain_human_reply?
+    !private? && human_response?
+  end
+
   private
+
+  def execute_after_create_commit_callbacks
+    super
+    delete_captain_reply_draft
+  end
+
+  def delete_captain_reply_draft
+    return unless captain_human_reply?
+
+    Captain::ReplyDraft.find_by(conversation_id: conversation_id)&.destroy!
+  end
 
   def reopen_resolved_conversation
     assistant = conversation.inbox.captain_assistant
 
     return super if assistant.blank? || conversation.inbox.external_bot_active?
-    return conversation.open! unless assistant.engages?(conversation.contact, conversation)
+    # Draft mode never hands a reopened conversation to Captain.
+    return conversation.open! if assistant.draft_mode? || !assistant.engages?(conversation.contact, conversation)
 
     super
   end

@@ -108,6 +108,8 @@ module Enterprise::Account::PlanUsageAndLimits # rubocop:disable Metrics/ModuleL
   end
 
   def default_captain_limits
+    return { documents: ChatwootApp.max_limit, responses: ChatwootApp.max_limit }.with_indifferent_access unless ChatwootApp.chatwoot_cloud?
+
     shopify_billing? ? shopify_captain_limits : stripe_captain_limits
   end
 
