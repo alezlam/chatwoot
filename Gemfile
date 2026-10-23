@@ -116,7 +116,11 @@ gem 'koala'
 gem 'slack-ruby-client', '~> 2.7.0'
 # for dialogflow integrations
 gem 'google-cloud-dialogflow-v2', '>= 0.24.0'
-gem 'grpc'
+# 1.74+ ships a prebuilt x86_64-linux-musl gem, so the Alpine image no longer compiles grpc (~12 min)
+gem 'grpc', '~> 1.74.0'
+# No musl build of google-protobuf exists and its glibc build breaks on Alpine, so it stays compiled from source
+# https://github.com/googleapis/google-cloud-ruby/issues/13306
+gem 'google-protobuf', force_ruby_platform: true
 # Translate integrations
 # 'google-cloud-translate' gem depends on faraday 2.0 version
 # this dependency breaks the slack-ruby-client gem
