@@ -28,7 +28,11 @@ import CustomToolsIndex from './tools/Index.vue';
 const meta = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: [
+    INSTALLATION_TYPES.CLOUD,
+    INSTALLATION_TYPES.ENTERPRISE,
+    INSTALLATION_TYPES.COMMUNITY,
+  ],
 };
 
 const faqSuggestionsMeta = {
@@ -39,13 +43,21 @@ const faqSuggestionsMeta = {
 const metaCustomTools = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN_CUSTOM_TOOLS,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: [
+    INSTALLATION_TYPES.CLOUD,
+    INSTALLATION_TYPES.ENTERPRISE,
+    INSTALLATION_TYPES.COMMUNITY,
+  ],
 };
 
 const metaV2 = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: [
+    INSTALLATION_TYPES.CLOUD,
+    INSTALLATION_TYPES.ENTERPRISE,
+    INSTALLATION_TYPES.COMMUNITY,
+  ],
 };
 
 const assistantRoutes = [
@@ -163,6 +175,7 @@ const assistantRoutes = [
       installationTypes: [
         INSTALLATION_TYPES.CLOUD,
         INSTALLATION_TYPES.ENTERPRISE,
+        INSTALLATION_TYPES.COMMUNITY,
       ],
     },
   },
