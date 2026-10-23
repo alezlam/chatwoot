@@ -16,7 +16,7 @@
 #
 #  index_captain_assistants_on_account_id  (account_id)
 #
-class Captain::Assistant < ApplicationRecord
+class Captain::Assistant < ApplicationRecord # rubocop:disable Metrics/ClassLength
   DESCRIPTION_LENGTH_LIMIT = 500
   CITATION_SOURCES_STATE_KEY = :captain_v2_citation_sources
   AUTO_RESOLVE_MODES = %w[disabled legacy evaluated].freeze
@@ -81,6 +81,7 @@ class Captain::Assistant < ApplicationRecord
   scope :for_account, ->(account_id) { where(account_id: account_id) }
 
   def draft_mode? = reply_mode.nil? || reply_mode == 'draft'
+  def products_enabled? = products.enabled.exists?
 
   def available_name
     name
@@ -212,6 +213,7 @@ class Captain::Assistant < ApplicationRecord
   def agent_tools
     [
       self.class.resolve_tool_class('faq_lookup').new(self),
+      *(self.class.resolve_tool_class('product_lookup').new(self) if products_enabled?),
       self.class.resolve_tool_class('handoff').new(self),
       *custom_tools.enabled.map { |custom_tool| custom_tool.tool(self) }
     ]
@@ -223,6 +225,7 @@ class Captain::Assistant < ApplicationRecord
       description: description,
       product_name: config['product_name'] || 'this product',
       citation_enabled: citations_enabled?,
+      products_enabled: products_enabled?,
       scenarios: scenarios.enabled.map do |scenario|
         {
           title: scenario.title,

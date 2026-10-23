@@ -42,9 +42,17 @@ module Concerns::Agentable
   private
 
   def runtime_prompt_context(context, runtime_configuration)
-    return context unless runtime_configuration
+    # A plain hash runtime configuration (draft runs) carries only per-run values such as current_product.
+    return context.merge(current_product_context(runtime_configuration)) unless runtime_configuration.respond_to?(:prompt_context_for)
 
     runtime_configuration.prompt_context_for(self, context)
+  end
+
+  def current_product_context(runtime_configuration)
+    current_product = runtime_configuration.try(:dig, :current_product)
+    return {} if current_product.blank?
+
+    { current_product: current_product.to_h.symbolize_keys.slice(:name, :description, :prompt, :context) }
   end
 
   def agent_name

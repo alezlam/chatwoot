@@ -42,6 +42,7 @@ Here's the metadata we have about the current conversation and the contact assoc
 {% endif -%}
 
 
+{% render 'current_product', current_product: current_product, products_enabled: products_enabled -%}
 {% if response_guidelines.size > 0 -%}
 # Response Guidelines
 Your responses should follow these guidelines:

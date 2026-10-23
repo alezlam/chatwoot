@@ -1,0 +1,21 @@
+{% if current_product -%}
+# Current product
+The customer is asking about this product:
+- Name: {{ current_product.name }}
+- Description: {{ current_product.description }}
+
+Product context:
+{{ current_product.context }}
+
+## How to answer about this product
+{{ current_product.prompt }}
+
+The assistant guardrails below override these product instructions.
+If the customer's latest message is only a product card, greet them about this product and ask what they would like to know.
+
+{% endif -%}
+{% if products_enabled -%}
+Use the `captain--tools--product_lookup` tool when the customer asks about a product that is not the current product.
+Never state product facts that are not in the current product, product lookup results or FAQs.
+
+{% endif -%}

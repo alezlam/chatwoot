@@ -11,6 +11,8 @@ class Captain::Assistant::AgentRunnerService
   attr_reader :last_run_result
 
   REPLY_SUGGESTION_SOURCE = 'copilot_reply_suggestion'.freeze
+  DRAFT_SOURCE = :draft
+  DRAFT_TOOL_IDS = %w[faq_lookup product_lookup].freeze
   RunOptions = Data.define(:callbacks, :source, :responding_to_message_id, :runtime_configuration) do
     def initialize(callbacks: {}, source: nil, responding_to_message_id: nil, runtime_configuration: nil)
       super
@@ -113,7 +115,8 @@ class Captain::Assistant::AgentRunnerService
   def build_and_wire_agents
     return [reply_suggestion_agent] if reply_suggestion?
 
-    return default_agent_graph unless @runtime_configuration
+    # A plain hash (draft runs) only adds prompt values; the playground configuration also replaces scenarios.
+    return default_agent_graph unless @runtime_configuration.respond_to?(:scenarios)
 
     assistant_agent = @assistant.agent(runtime_configuration: @runtime_configuration)
     scenario_agents = @runtime_configuration.scenarios.map do |scenario|
@@ -127,13 +130,19 @@ class Captain::Assistant::AgentRunnerService
   end
 
   def default_agent_graph
-    assistant_agent = @assistant.agent
-    scenario_agents = @assistant.scenarios.enabled.map(&:agent)
+    assistant_agent = @assistant.agent(runtime_configuration: @runtime_configuration)
+    scenario_agents = @assistant.scenarios.enabled.map { |scenario| scenario.agent(runtime_configuration: @runtime_configuration) }
 
     wire_agents(assistant_agent, scenario_agents)
   end
 
   def wire_agents(assistant_agent, scenario_agents)
+    # Restrict before wiring so handoffs point at the read-only clones.
+    if draft?
+      assistant_agent = read_only_agent(assistant_agent)
+      scenario_agents = scenario_agents.map { |scenario_agent| read_only_agent(scenario_agent) }
+    end
+
     assistant_agent.register_handoffs(*scenario_agents) if scenario_agents.any?
     scenario_agents.each { |scenario_agent| scenario_agent.register_handoffs(assistant_agent) }
 
@@ -155,6 +164,16 @@ class Captain::Assistant::AgentRunnerService
   end
 
   def reply_suggestion? = @source == REPLY_SUGGESTION_SOURCE
+
+  def draft? = @source == DRAFT_SOURCE
+
+  def read_only_agent(agent)
+    agent.clone(tools: agent.tools.select { |tool| draft_tool_classes.any? { |tool_class| tool.instance_of?(tool_class) } })
+  end
+
+  def draft_tool_classes
+    @draft_tool_classes ||= DRAFT_TOOL_IDS.map { |tool_id| Captain::Assistant.resolve_tool_class(tool_id) }
+  end
 
   def runner
     @runner ||= begin
