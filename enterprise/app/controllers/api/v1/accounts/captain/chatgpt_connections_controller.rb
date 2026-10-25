@@ -1,8 +1,11 @@
 class Api::V1::Accounts::Captain::ChatgptConnectionsController < Api::V1::Accounts::BaseController
   before_action -> { check_authorization(Captain::ChatgptConnection) }
 
+  MODELS_CACHE_TTL = 10.minutes
+
   def show
     @connection = Current.account.captain_chatgpt_connection || Captain::ChatgptConnection.new(account: Current.account)
+    @models = @connection.connected? ? available_models : []
   end
 
   def create
@@ -33,6 +36,14 @@ class Api::V1::Accounts::Captain::ChatgptConnectionsController < Api::V1::Accoun
   end
 
   private
+
+  # Failures and empty lists are not cached.
+  def available_models
+    key = "captain/chatgpt_models/#{@connection.id}/#{@connection.chatgpt_account_id}"
+    Rails.cache.fetch(key, expires_in: MODELS_CACHE_TTL, skip_nil: true) { Captain::Chatgpt::ModelsClient.list(@connection).presence } || []
+  rescue Captain::Chatgpt::AuthError, Captain::Chatgpt::RequestError
+    []
+  end
 
   def find_or_create_connection
     Captain::ChatgptConnection.find_or_create_by!(account_id: Current.account.id)
