@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import MetricCard from 'dashboard/components-next/captain/pageComponents/overview/MetricCard.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 
@@ -65,7 +66,9 @@ onUnmounted(stopAutoRotation);
     <div
       class="grid gap-px border-b lg:grid-cols-6 border-n-weak dark:border-n-strong"
     >
+      <!-- ponytail: AI summary hidden until ChatGPT provider covers it -->
       <div
+        v-if="CAPTAIN_EXTRAS_ENABLED"
         class="flex flex-col min-h-[8.6875rem] gap-3 p-5 bg-n-card lg:col-span-4"
       >
         <div class="flex items-center justify-between gap-3">
@@ -138,7 +141,8 @@ onUnmounted(stopAutoRotation);
         :loading="loading"
         layout="headline"
         value-size-class="text-2xl"
-        class="min-h-[8.6875rem] lg:col-span-1"
+        class="min-h-[8.6875rem]"
+        :class="CAPTAIN_EXTRAS_ENABLED ? 'lg:col-span-1' : 'lg:col-span-3'"
         @click="emit('metricClick', metric)"
       />
     </div>

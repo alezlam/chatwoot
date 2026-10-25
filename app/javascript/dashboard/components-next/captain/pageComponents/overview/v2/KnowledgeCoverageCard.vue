@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import Button from 'dashboard/components-next/button/Button.vue';
 import OverviewPanel from './OverviewPanel.vue';
 import ProgressMetric from './ProgressMetric.vue';
@@ -18,7 +19,7 @@ const suggestions = computed(() => Number(props.knowledge?.suggestions || 0));
 const total = computed(() => approved.value + suggestions.value);
 const coverage = computed(() => Number(props.knowledge?.coverage || 0));
 
-const stats = computed(() => [
+const allStats = computed(() => [
   {
     key: 'approved',
     label: t('CAPTAIN.OVERVIEW.KNOWLEDGE.APPROVED'),
@@ -30,11 +31,18 @@ const stats = computed(() => [
     value: suggestions.value,
   },
 ]);
+
+// ponytail: hidden until ChatGPT provider covers it
+const stats = computed(() =>
+  allStats.value.filter(
+    stat => CAPTAIN_EXTRAS_ENABLED || stat.key === 'approved'
+  )
+);
 </script>
 
 <template>
   <OverviewPanel :title="$t('CAPTAIN.OVERVIEW.KNOWLEDGE.TITLE')">
-    <template #actions>
+    <template v-if="CAPTAIN_EXTRAS_ENABLED" #actions>
       <Button
         sm
         slate
@@ -61,7 +69,10 @@ const stats = computed(() => [
         color="rgb(var(--blue-9))"
         :loading="loading"
       />
-      <div class="grid grid-cols-2 gap-4">
+      <div
+        class="grid gap-4"
+        :class="CAPTAIN_EXTRAS_ENABLED ? 'grid-cols-2' : 'grid-cols-1'"
+      >
         <div
           v-for="stat in stats"
           :key="stat.key"

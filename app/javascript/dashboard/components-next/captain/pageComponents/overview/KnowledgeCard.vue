@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 
 const props = defineProps({
   knowledge: {
@@ -28,7 +29,7 @@ const linkTo = routeName => ({
   },
 });
 
-const stats = computed(() => [
+const allStats = computed(() => [
   {
     key: 'approved',
     value: props.knowledge.approved,
@@ -48,6 +49,13 @@ const stats = computed(() => [
     to: linkTo('captain_assistants_documents_index'),
   },
 ]);
+
+// ponytail: hidden until ChatGPT provider covers it
+const stats = computed(() =>
+  allStats.value.filter(
+    stat => CAPTAIN_EXTRAS_ENABLED || stat.key === 'approved'
+  )
+);
 </script>
 
 <template>
@@ -68,7 +76,10 @@ const stats = computed(() => [
         :style="{ width: `${approvedPct}%` }"
       />
     </div>
-    <div class="grid grid-cols-3 gap-3">
+    <div
+      class="grid gap-3"
+      :class="CAPTAIN_EXTRAS_ENABLED ? 'grid-cols-3' : 'grid-cols-1'"
+    >
       <RouterLink
         v-for="stat in stats"
         :key="stat.key"
