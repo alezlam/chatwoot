@@ -19,6 +19,9 @@ class Captain::Chatgpt::DeviceLoginJob < ApplicationJob
     end
   rescue Captain::Chatgpt::AuthError, Faraday::Error => e
     fail_login!(connection, device, e)
+  rescue ActiveRecord::Encryption::Errors::Configuration
+    # Tokens cannot be saved without encryption keys; retrying would fail the same way.
+    connection.disconnect!(error: error_hash('encryption_not_configured', 'Active Record encryption keys are not configured on the server'))
   end
 
   private

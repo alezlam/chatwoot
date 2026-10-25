@@ -33,6 +33,9 @@ const errorMessages = computed(() => ({
   refresh_failed: t('CAPTAIN.CHATGPT.ERRORS.REFRESH_FAILED'),
   rate_limited: t('CAPTAIN.CHATGPT.ERRORS.RATE_LIMITED'),
   no_models: t('CAPTAIN.CHATGPT.ERRORS.NO_MODELS'),
+  encryption_not_configured: t(
+    'CAPTAIN.CHATGPT.ERRORS.ENCRYPTION_NOT_CONFIGURED'
+  ),
 }));
 
 const errorText = computed(() => {

@@ -10,6 +10,11 @@ class CaptainChatgptConnection extends ApiClient {
     return axios.get(this.url);
   }
 
+  // Skips the models API call on the server; the response has models: [].
+  getStatus() {
+    return axios.get(this.url, { params: { status_only: 1 } });
+  }
+
   connect() {
     return axios.post(this.url);
   }

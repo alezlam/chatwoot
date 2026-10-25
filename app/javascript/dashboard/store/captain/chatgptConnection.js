@@ -71,6 +71,18 @@ export const actions = {
       // Keep the previous state.
     }
   },
+  // Status-only refresh for the status notice: keeps the model list the settings card loaded.
+  refreshStatus: async ({ commit, state: $state }) => {
+    try {
+      const response = await CaptainChatgptConnection.getStatus();
+      commit(SET_CONNECTION, {
+        ...response.data,
+        models: $state.record.models,
+      });
+    } catch {
+      // Keep the previous state.
+    }
+  },
 };
 
 export default {

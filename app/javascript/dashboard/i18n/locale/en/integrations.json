@@ -445,7 +445,9 @@
       "NOTICE": {
         "DISCONNECTED": "ChatGPT is not connected, so Captain cannot draft replies.",
         "PENDING": "ChatGPT connection is waiting for approval, so Captain cannot draft replies yet.",
-        "RATE_LIMITED": "ChatGPT limit reached — drafts resume at {time}"
+        "RATE_LIMITED": "ChatGPT limit reached — drafts resume at {time}",
+        "FAILING": "AI drafts are failing — check AI Studio settings",
+        "OPEN_SETTINGS": "Open settings"
       },
       "ERRORS": {
         "DEVICE_LOGIN_DISABLED": "Turn on device code login in ChatGPT → Settings → Security, then connect again.",
@@ -457,6 +459,7 @@
         "REFRESH_FAILED": "ChatGPT login could not be renewed. Captain will retry.",
         "RATE_LIMITED": "ChatGPT is rate limiting requests. Captain will retry.",
         "NO_MODELS": "Your ChatGPT account has no models available for Captain.",
+        "ENCRYPTION_NOT_CONFIGURED": "Server is missing encryption keys — ask the admin to set ACTIVE_RECORD_ENCRYPTION_* and redeploy.",
         "GENERIC": "ChatGPT reported a problem. Please try again."
       }
     },

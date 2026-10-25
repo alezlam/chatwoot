@@ -1,4 +1,6 @@
-# Measures the lexical retriever (hit@TOP_K, MRR) on labelled buyer queries. Read-only: it never writes to the DB.
+# Measures the lexical retriever (hit@TOP_K, MRR) on labelled buyer queries. The retriever pass is read-only.
+# WITH_AGENT=1 runs the agent through the ChatGPT connection, which may refresh its tokens, record last_error
+# and save the first listed model when none is picked (as a draft run does).
 #   rake 'captain:retrieval_eval[ASSISTANT_ID]' [LABELS=path.yml] [WITH_AGENT=1]
 # Queries come from card conversations (product card -> the buyer's text messages) and an optional YAML
 # of [{ query:, expected_type: product|faq, expected_id: }]. WITH_AGENT=1 also runs the draft agent with
@@ -36,9 +38,16 @@ class CaptainRetrievalEval
   private
 
   def agent_ready?
-    return true if @assistant.account.captain_chatgpt_connection&.connected?
+    connection = @assistant.account.captain_chatgpt_connection
+    return skip_agent('no connected ChatGPT connection on this account') unless connection&.connected?
+    # The runner reads connection.model; draft_model! picks the first listed one when the owner chose none.
+    return skip_agent("no model (#{connection.last_error['type']})") if connection.draft_model!.blank?
 
-    puts 'Skipping agent baseline: no connected ChatGPT connection on this account.'
+    true
+  end
+
+  def skip_agent(reason)
+    puts "Skipping agent baseline: #{reason}."
     false
   end
 
