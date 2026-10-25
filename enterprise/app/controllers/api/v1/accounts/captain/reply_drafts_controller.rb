@@ -17,6 +17,7 @@ class Api::V1::Accounts::Captain::ReplyDraftsController < Api::V1::Accounts::Bas
       @message = Messages::MessageBuilder.new(
         Current.user, @reply_draft.conversation, { content: params[:content].presence || @reply_draft.content }
       ).perform
+      count_hits
       @reply_draft.destroy!
     end
     render 'api/v1/accounts/conversations/messages/create'
@@ -32,6 +33,13 @@ class Api::V1::Accounts::Captain::ReplyDraftsController < Api::V1::Accounts::Bas
   end
 
   private
+
+  # Entries the draft drew on count as used once the owner sends it.
+  def count_hits
+    { Captain::Product => @reply_draft.retrieved_product_ids, Captain::AssistantResponse => @reply_draft.retrieved_faq_ids }.each do |model, ids|
+      model.where(account_id: @reply_draft.account_id, id: ids).update_all('hits = hits + 1') if ids.present? # rubocop:disable Rails/SkipsModelValidations
+    end
+  end
 
   def set_reply_draft
     @reply_draft = Captain::ReplyDraft.where(account_id: Current.account.id).find(params[:id])

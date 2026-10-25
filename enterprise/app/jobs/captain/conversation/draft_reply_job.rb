@@ -15,11 +15,12 @@ class Captain::Conversation::DraftReplyJob < ApplicationJob
     return unless chatgpt_ready?
 
     product = Captain::Products::MatchService.new(conversation: conversation, assistant: assistant).perform
-    result = generate(product)
+    retrieved = retrieve(product)
+    result, tool_ids = generate(product, retrieved)
     return log_skip(result) if no_draft?(result)
     return if superseded?
 
-    save_draft(product, result['response'])
+    save_draft(product, result['response'], retrieved, tool_ids)
   rescue ActiveStorage::FileNotFoundError, Faraday::BadRequestError
     raise
   rescue StandardError => e
@@ -29,21 +30,46 @@ class Captain::Conversation::DraftReplyJob < ApplicationJob
 
   private
 
-  def generate(product)
+  CARD_TEXT = /\A(Product|Order): \S+\z/
+  QUERY_MESSAGES = 20
+
+  # Lexical lookup over the buyer's messages since the last reply, injected before the agent's first turn.
+  def retrieve(product)
+    query = buyer_query
+    return if query.blank?
+
+    Captain::Retrieval::LexicalRetriever.new(assistant: @assistant).search(query, exclude_product_ids: [product&.id].compact)
+  rescue StandardError => e
+    Rails.logger.error("[CAPTAIN][DraftReplyJob] retrieval failed conversation=#{@conversation.id} #{e.class}: #{e.message}")
+    nil
+  end
+
+  def buyer_query
+    messages = @conversation.messages.where(private: false)
+    last_outgoing = messages.outgoing.maximum(:id)
+    incoming = messages.incoming
+    incoming = incoming.where('messages.id > ?', last_outgoing) if last_outgoing
+    incoming.order(:id).last(QUERY_MESSAGES).filter_map(&:content).grep_v(CARD_TEXT).join("\n")
+  end
+
+  def generate(product, retrieved)
     run_options = Captain::Assistant::AgentRunnerService::RunOptions.new(
       source: Captain::Assistant::AgentRunnerService::DRAFT_SOURCE,
       responding_to_message_id: @responding_to_message_id,
-      runtime_configuration: { draft: true, current_product: product&.slice(:name, :description, :prompt, :context) }
+      runtime_configuration: { draft: true, current_product: product&.slice(:name, :description, :prompt, :context),
+                               retrieved_knowledge: retrieved&.to_markdown }
     )
     message_history = Captain::Conversation::MessageHistoryBuilderService.new(conversation: @conversation, draft: true).perform
-    Captain::Assistant::AgentRunnerService.new(assistant: @assistant, conversation: @conversation, run_options: run_options)
-                                          .generate_response(message_history: message_history)
+    runner = Captain::Assistant::AgentRunnerService.new(assistant: @assistant, conversation: @conversation, run_options: run_options)
+    [runner.generate_response(message_history: message_history), runner.retrieved_ids]
   end
 
-  def save_draft(product, content)
+  def save_draft(product, content, retrieved, tool_ids)
     Captain::ReplyDraft.find_or_initialize_by(conversation: @conversation).update!(
       account: @conversation.account, assistant: @assistant, product: product,
-      content: content, last_message_id: @responding_to_message_id
+      content: content, last_message_id: @responding_to_message_id,
+      retrieved_product_ids: ((retrieved&.product_ids || []) + tool_ids[:product_ids]).uniq,
+      retrieved_faq_ids: ((retrieved&.faq_ids || []) + tool_ids[:faq_ids]).uniq
     )
   end
 
