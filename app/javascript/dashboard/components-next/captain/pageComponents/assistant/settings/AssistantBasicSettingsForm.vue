@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength } from '@vuelidate/validators';
 
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Editor from 'dashboard/components-next/Editor/Editor.vue';
@@ -130,11 +131,12 @@ watch(
         {{ t('CAPTAIN.ASSISTANTS.FORM.FEATURES.TITLE') }}
       </label>
       <div class="flex flex-col gap-2">
-        <label class="flex items-center gap-2">
+        <!-- ponytail: hidden until ChatGPT provider covers it -->
+        <label v-if="CAPTAIN_EXTRAS_ENABLED" class="flex items-center gap-2">
           <input v-model="state.features.conversationFaqs" type="checkbox" />
           {{ t('CAPTAIN.ASSISTANTS.FORM.FEATURES.ALLOW_CONVERSATION_FAQS') }}
         </label>
-        <label class="flex items-center gap-2">
+        <label v-if="CAPTAIN_EXTRAS_ENABLED" class="flex items-center gap-2">
           <input v-model="state.features.memories" type="checkbox" />
           {{ t('CAPTAIN.ASSISTANTS.FORM.FEATURES.ALLOW_MEMORIES') }}
         </label>

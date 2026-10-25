@@ -5,6 +5,7 @@ import { useVuelidate } from '@vuelidate/core';
 import { required, minLength } from '@vuelidate/validators';
 import { useMapGetter } from 'dashboard/composables/store';
 
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Editor from 'dashboard/components-next/Editor/Editor.vue';
@@ -142,14 +143,15 @@ watch(
         {{ t('CAPTAIN.ASSISTANTS.FORM.FEATURES.TITLE') }}
       </legend>
 
-      <label class="flex items-center gap-2">
+      <!-- ponytail: hidden until ChatGPT provider covers it -->
+      <label v-if="CAPTAIN_EXTRAS_ENABLED" class="flex items-center gap-2">
         <input v-model="state.featureFaq" type="checkbox" />
         <span class="text-sm font-medium text-n-slate-12">
           {{ t('CAPTAIN.ASSISTANTS.FORM.FEATURES.ALLOW_CONVERSATION_FAQS') }}
         </span>
       </label>
 
-      <label class="flex items-center gap-2">
+      <label v-if="CAPTAIN_EXTRAS_ENABLED" class="flex items-center gap-2">
         <input v-model="state.featureMemory" type="checkbox" />
         <span class="text-sm font-medium text-n-slate-12">
           {{ t('CAPTAIN.ASSISTANTS.FORM.FEATURES.ALLOW_MEMORIES') }}

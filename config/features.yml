@@ -239,7 +239,7 @@
   premium: true
 - name: captain_tasks
   display_name: Captain Tasks
-  enabled: true
+  enabled: false
 - name: conversation_required_attributes
   display_name: Required Conversation Attributes
   enabled: false

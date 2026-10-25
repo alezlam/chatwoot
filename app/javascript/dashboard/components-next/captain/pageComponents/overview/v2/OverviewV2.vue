@@ -19,6 +19,7 @@ import RangeSelector from 'dashboard/components-next/captain/pageComponents/over
 import InboxBanner from 'dashboard/components-next/captain/pageComponents/overview/InboxBanner.vue';
 import CoverageBanner from 'dashboard/components-next/captain/pageComponents/overview/CoverageBanner.vue';
 import QuickLinks from 'dashboard/components-next/captain/pageComponents/overview/QuickLinks.vue';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import OverviewSummaryCard from './OverviewSummaryCard.vue';
 import ResolutionFlowCard from './ResolutionFlowCard.vue';
 import ResolutionTrendCard from './ResolutionTrendCard.vue';
@@ -105,6 +106,8 @@ const fetchReport = async () => {
 
 const fetchSummary = async () => {
   summaryPoints.value = [];
+  // ponytail: hidden until ChatGPT provider covers it
+  if (!CAPTAIN_EXTRAS_ENABLED) return;
 
   try {
     const response = await runSummaryRequest(signal =>

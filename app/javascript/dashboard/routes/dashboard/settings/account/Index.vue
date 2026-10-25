@@ -2,6 +2,7 @@
 import { useVuelidate } from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import { mapGetters } from 'vuex';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import { useAlert } from 'dashboard/composables';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useConfig } from 'dashboard/composables/useConfig';
@@ -63,6 +64,8 @@ export default {
       isOnChatwootCloud: 'globalConfig/isOnChatwootCloud',
     }),
     showAudioTranscriptionConfig() {
+      // ponytail: hidden until ChatGPT provider covers it
+      if (!CAPTAIN_EXTRAS_ENABLED) return false;
       return this.isFeatureEnabledonAccount(
         this.accountId,
         FEATURE_FLAGS.CAPTAIN

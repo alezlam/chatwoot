@@ -22,6 +22,7 @@ import ChannelIcon from 'next/icon/ChannelIcon.vue';
 import EmojiIcon from 'next/emoji-icon-picker/EmojiIcon.vue';
 import SidebarAccountSwitcher from './SidebarAccountSwitcher.vue';
 import Logo from 'next/icon/Logo.vue';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
 import {
   SIDEBAR_SORT_SECTIONS,
@@ -544,14 +545,19 @@ const menuItems = computed(() => {
             navigationPath: 'captain_assistants_responses_index',
           }),
         },
-        {
-          name: 'Documents',
-          label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
-          activeOn: ['captain_assistants_documents_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_documents_index',
-          }),
-        },
+        // ponytail: hidden until ChatGPT provider covers it
+        ...(CAPTAIN_EXTRAS_ENABLED
+          ? [
+              {
+                name: 'Documents',
+                label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
+                activeOn: ['captain_assistants_documents_index'],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_documents_index',
+                }),
+              },
+            ]
+          : []),
         {
           name: 'Scenarios',
           label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
@@ -560,14 +566,19 @@ const menuItems = computed(() => {
             navigationPath: 'captain_assistants_scenarios_index',
           }),
         },
-        {
-          name: 'Playground',
-          label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
-          activeOn: ['captain_assistants_playground_index'],
-          to: accountScopedRoute('captain_assistants_index', {
-            navigationPath: 'captain_assistants_playground_index',
-          }),
-        },
+        // ponytail: hidden until ChatGPT provider covers it
+        ...(CAPTAIN_EXTRAS_ENABLED
+          ? [
+              {
+                name: 'Playground',
+                label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
+                activeOn: ['captain_assistants_playground_index'],
+                to: accountScopedRoute('captain_assistants_index', {
+                  navigationPath: 'captain_assistants_playground_index',
+                }),
+              },
+            ]
+          : []),
         {
           name: 'Inboxes',
           label: t('SIDEBAR.CAPTAIN_INBOXES'),

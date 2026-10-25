@@ -21,6 +21,7 @@ const FloatingCallWidget = defineAsyncComponent(
   () => import('dashboard/components-next/call/FloatingCallWidget.vue')
 );
 
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import CopilotLauncher from 'dashboard/components-next/copilot/CopilotLauncher.vue';
 import CopilotContainer from 'dashboard/components/copilot/CopilotContainer.vue';
 
@@ -47,6 +48,7 @@ export default {
     const callsStore = useCallsStore();
 
     return {
+      CAPTAIN_EXTRAS_ENABLED,
       uiSettings,
       updateUISettings,
       accountId,
@@ -154,12 +156,13 @@ export default {
       </UpgradePage>
       <template v-if="!showUpgradePage">
         <router-view />
-        <CopilotLauncher />
+        <!-- ponytail: hidden until ChatGPT provider covers it -->
+        <CopilotLauncher v-if="CAPTAIN_EXTRAS_ENABLED" />
         <MobileSidebarLauncher
           :is-mobile-sidebar-open="isMobileSidebarOpen"
           @toggle="toggleMobileSidebar"
         />
-        <CopilotContainer />
+        <CopilotContainer v-if="CAPTAIN_EXTRAS_ENABLED" />
         <FloatingCallWidget v-if="hasActiveCall || hasIncomingCall" />
       </template>
       <CommandBar :is-paywalled="isAccountPaywalled" />

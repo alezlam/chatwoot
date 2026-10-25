@@ -4,6 +4,7 @@ import { useStore } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 
 const store = useStore();
@@ -52,6 +53,13 @@ const routeToLastActiveAssistant = () => {
   }
 
   const { navigationPath } = route.params;
+  // ponytail: documents and playground hidden until ChatGPT provider covers them
+  const hiddenRoutes = CAPTAIN_EXTRAS_ENABLED
+    ? []
+    : [
+        'captain_assistants_documents_index',
+        'captain_assistants_playground_index',
+      ];
   const isAValidRoute = [
     'captain_assistants_products_index', // Products page
     'captain_assistants_overview_index', // Overview page
@@ -62,7 +70,9 @@ const routeToLastActiveAssistant = () => {
     'captain_assistants_inboxes_index', // Inboxes page
     'captain_tools_index', // Tools page
     'captain_assistants_settings_index', // Settings page
-  ].includes(navigationPath);
+  ]
+    .filter(name => !hiddenRoutes.includes(name))
+    .includes(navigationPath);
 
   const navigateTo = isAValidRoute
     ? navigationPath

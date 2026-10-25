@@ -13,6 +13,7 @@ import ReplyEmailHead from './ReplyEmailHead.vue';
 import ReplyBottomPanel from 'dashboard/components/widgets/WootWriter/ReplyBottomPanel.vue';
 import CopilotReplyBottomPanel from 'dashboard/components/widgets/WootWriter/CopilotReplyBottomPanel.vue';
 import ArticleSearchPopover from 'dashboard/routes/dashboard/helpcenter/components/ArticleSearch/SearchPopover.vue';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import CopilotEditorSection from './CopilotEditorSection.vue';
 import MessageSignatureMissingAlert from './MessageSignatureMissingAlert.vue';
 import ReplyBoxBanner from './ReplyBoxBanner.vue';
@@ -148,6 +149,8 @@ export default {
     });
 
     return {
+      // ponytail: hidden until ChatGPT provider covers it
+      CAPTAIN_EXTRAS_ENABLED,
       uiSettings,
       isEditorHotKeyEnabled,
       fetchSignatureFlagFromUISettings,
@@ -1404,7 +1407,11 @@ export default {
           @pause="recordingAudioState = 'paused'"
         />
         <CopilotEditorSection
-          v-if="copilot.isActive.value && !showAudioRecorderEditor"
+          v-if="
+            CAPTAIN_EXTRAS_ENABLED &&
+            copilot.isActive.value &&
+            !showAudioRecorderEditor
+          "
           :show-copilot-editor="copilot.showEditor.value"
           :is-generating-content="copilot.isGenerating.value"
           :generated-content="copilot.generatedContent.value"
