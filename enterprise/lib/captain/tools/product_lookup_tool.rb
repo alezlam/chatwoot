@@ -16,23 +16,12 @@ class Captain::Tools::ProductLookupTool < Captain::Tools::BasePublicTool
     ids = tool_context.state[:retrieved_product_ids] ||= []
     ids.concat(result.product_ids - ids)
     log_tool_usage('found_results', { query: query, count: result.entries.size })
-    result.entries.map { |entry| format_product(entry[:record]) }.join("\n")
+    result.to_markdown
   end
 
   private
 
   def safe_to_run_after_new_customer_message?
     true
-  end
-
-  def format_product(product)
-    <<~PRODUCT
-      Product result:
-      Name: #{product.name}
-      Shopee item id: #{product.shopee_item_id}
-      Description: #{product.description}
-      How to answer about this product: #{product.prompt}
-      Context: #{product.context}
-    PRODUCT
   end
 end

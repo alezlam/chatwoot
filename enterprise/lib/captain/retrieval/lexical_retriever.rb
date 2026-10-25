@@ -64,16 +64,20 @@ class Captain::Retrieval::LexicalRetriever
   end
 
   def score(corpus, query_tokens, exclude_product_ids)
-    total = corpus.size
-    doc_freq = query_tokens.index_with { |token| corpus.count { |e| e[:tokens].include?(token) } }
     candidates = corpus.reject { |e| e[:kind] == :product && exclude_product_ids.include?(e[:record].id) }
+    matched = candidates.index_with { |e| query_tokens.select { |token| e[:tokens].include?(token) } }
+    bases = base_scores(corpus, matched)
 
-    candidates.filter_map { |e| score_entry(e, query_tokens, doc_freq, total) }
+    candidates.filter_map do |e|
+      e.merge(score: bases[e] * trust_factor(e[:record])).except(:tokens) if bases[e].positive?
+    end
   end
 
-  def score_entry(entry, query_tokens, doc_freq, total)
-    base = query_tokens.select { |token| entry[:tokens].include?(token) }.sum { |token| Math.log(total.to_f / doc_freq[token]) }
-    entry.merge(score: base * trust_factor(entry[:record])).except(:tokens) if base.positive?
+  def base_scores(corpus, matched)
+    doc_freq = matched.values.flatten.uniq.index_with { |token| corpus.count { |e| e[:tokens].include?(token) } }
+    bases = matched.transform_values { |tokens| tokens.sum { |token| Math.log(corpus.size.to_f / doc_freq[token]) } }
+    # Degenerate IDF (one-entry corpus, or every matching token in every entry) scores 0: fall back to matched-token count.
+    bases.values.any?(&:positive?) ? bases : matched.transform_values(&:size)
   end
 
   def trust_factor(record)
@@ -86,14 +90,16 @@ class Captain::Retrieval::LexicalRetriever
 
     sorted = scored.sort_by { |e| -e[:score] }
     threshold = sorted.first[:score] * MIN_RELATIVE_SCORE
-    kept = []
-    used = 0
-    sorted.first(top_k).each do |e|
-      break if e[:score] < threshold || used + e[:markdown].length > char_limit
-
-      kept << e
-      used += e[:markdown].length
-    end
+    kept = fit_to_limit(sorted.first(top_k).select { |e| e[:score] >= threshold }, char_limit)
     kept.empty? ? nil : Result.new(entries: kept)
+  end
+
+  # Stops before the cumulative markdown passes char_limit. The best entry alone may exceed it: keep it truncated, never return nothing.
+  def fit_to_limit(entries, char_limit)
+    used = 0
+    kept = entries.take_while { |e| (used += e[:markdown].length) <= char_limit }
+    return kept if kept.any? || entries.empty?
+
+    [entries.first.merge(markdown: entries.first[:markdown][0, char_limit])]
   end
 end

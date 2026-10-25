@@ -14,7 +14,7 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
       "No relevant FAQs found for: #{query}"
     else
       log_tool_usage('found_results', { query: query, count: responses.size })
-      format_responses(tool_context, responses)
+      format_entries(tool_context, result.entries)
     end
   end
 
@@ -45,25 +45,18 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
     ids.concat(responses.map(&:id) - ids)
   end
 
-  def format_responses(tool_context, responses)
-    responses.map { |response| format_response(tool_context, response) }.join
+  def format_entries(tool_context, entries)
+    entries.map do |entry|
+      response = entry[:record]
+      citation = citation_index_line(tool_context, response)
+      citation ? "#{citation}\n#{entry[:markdown]}" : entry[:markdown]
+    end.join("\n")
   end
 
-  def format_response(tool_context, response)
-    formatted_response = "
-        FAQ result:
-        "
-    if @assistant.citations_enabled? && response.customer_visible_source_url.present?
-      formatted_response += "
-          Citation index: #{citation_index(tool_context, response)}
-          "
-    end
-    formatted_response += "
-        Question: #{response.question}
-        Answer: #{response.answer}
-        "
+  def citation_index_line(tool_context, response)
+    return unless @assistant.citations_enabled? && response.customer_visible_source_url.present?
 
-    formatted_response
+    "Citation index: #{citation_index(tool_context, response)}"
   end
 
   def citation_index(tool_context, response)
