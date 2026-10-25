@@ -13,7 +13,8 @@ class Captain::Tools::SearchDocumentationService < Captain::Tools::BaseTool
                        .new(account: assistant.account)
                        .translate(query, target_language: assistant.account.locale_english_name)
 
-    responses = assistant.responses.approved.search(translated_query)
+    result = Captain::Retrieval::LexicalRetriever.new(assistant: assistant, kinds: %i[faqs]).search(translated_query)
+    responses = result ? result.entries.pluck(:record) : []
 
     return 'No FAQs found for the given query' if responses.empty?
 

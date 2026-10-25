@@ -3,10 +3,12 @@
 # Table name: captain_products
 #
 #  id             :bigint           not null, primary key
+#  confirmed      :boolean          default(FALSE), not null
 #  context        :text
 #  description    :text
 #  embedding      :vector(1536)
 #  enabled        :boolean          default(TRUE), not null
+#  hits           :integer          default(0), not null
 #  name           :string           not null
 #  prompt         :text
 #  created_at     :datetime         not null
@@ -27,10 +29,6 @@ class Captain::Product < ApplicationRecord
 
   belongs_to :account
   belongs_to :assistant, class_name: 'Captain::Assistant'
-  # ponytail: untuned until the live LLM check; cosine distance runs 0 (same) to 2 (opposite).
-  MAX_SEARCH_DISTANCE = 0.6
-
-  has_neighbors :embedding, normalize: true
 
   # Blank must be NULL: the unique index only excludes NULL, so two '' rows would collide.
   normalizes :shopee_item_id, with: ->(value) { value.to_s.strip.presence }
@@ -38,25 +36,5 @@ class Captain::Product < ApplicationRecord
   validates :name, presence: true
   validates :shopee_item_id, uniqueness: { scope: :assistant_id }, allow_blank: true
 
-  after_commit :update_product_embedding
-
   scope :enabled, -> { where(enabled: true) }
-
-  def self.search(query, assistant:)
-    embedding = Captain::Llm::EmbeddingService.new(account_id: assistant.account_id).get_embedding(query)
-    enabled.where(assistant_id: assistant.id).nearest_neighbors(:embedding, embedding, distance: 'cosine').limit(3)
-           .select { |product| product.neighbor_distance <= MAX_SEARCH_DISTANCE }
-  end
-
-  def embedding_text
-    "#{name}: #{description}\n#{context}"
-  end
-
-  private
-
-  def update_product_embedding
-    return unless saved_change_to_name? || saved_change_to_description? || saved_change_to_context?
-
-    Captain::Llm::UpdateEmbeddingJob.perform_later(self, embedding_text)
-  end
 end

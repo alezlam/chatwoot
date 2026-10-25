@@ -1,12 +1,12 @@
 class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
-  description 'Search FAQ responses using semantic similarity to find relevant answers'
+  description 'Search FAQ responses to find relevant answers'
   param :query, type: 'string', desc: 'The question or topic to search for in the FAQ database'
 
   def perform(tool_context, query:)
     log_tool_usage('searching', { query: query })
 
-    # Use existing vector search on approved responses
-    responses = @assistant.responses.approved.search(query).includes(:documentable).to_a
+    result = Captain::Retrieval::LexicalRetriever.new(assistant: @assistant, kinds: %i[faqs]).search(query)
+    responses = result ? result.entries.pluck(:record) : []
     record_retrieved_sources(tool_context, responses)
 
     if responses.empty?
@@ -27,6 +27,8 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
   def record_retrieved_sources(tool_context, responses)
     return if responses.empty?
 
+    record_retrieved_ids(tool_context, responses)
+
     metadata = tool_context.state[:cw_metadata] ||= {}
     metadata[:faq_ids] = Array(metadata[:faq_ids]) | responses.map(&:id)
 
@@ -36,6 +38,11 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
 
     used_faq_ids = Array(responses_by_type['User']).map(&:id)
     metadata[:used_faq_ids] = Array(metadata[:used_faq_ids]) | used_faq_ids
+  end
+
+  def record_retrieved_ids(tool_context, responses)
+    ids = tool_context.state[:retrieved_faq_ids] ||= []
+    ids.concat(responses.map(&:id) - ids)
   end
 
   def format_responses(tool_context, responses)

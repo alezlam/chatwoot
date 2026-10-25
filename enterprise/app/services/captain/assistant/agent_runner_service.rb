@@ -37,6 +37,7 @@ class Captain::Assistant::AgentRunnerService
     @last_run_result = runner.run(message_to_process, context: context, max_turns: 10)
     raise @last_run_result.error if @last_run_result.error
 
+    capture_run_state(@last_run_result)
     record_turn_start(@last_run_result)
     @last_run_result = rewrite_oversized_response(@last_run_result) if response_too_long?(@last_run_result)
 
@@ -56,7 +57,16 @@ class Captain::Assistant::AgentRunnerService
 
   def handoff_completed? = @handoff_tool_completed == true
 
+  # The runner shares its context[:state] hash with the tools, so ids they append are readable after the run.
+  def retrieved_ids
+    { product_ids: Array(@run_state&.dig(:retrieved_product_ids)), faq_ids: Array(@run_state&.dig(:retrieved_faq_ids)) }
+  end
+
   private
+
+  def capture_run_state(run_result)
+    @run_state = run_result.context&.dig(:state)
+  end
 
   def build_context(message_history)
     conversation_history = message_history.map do |msg|

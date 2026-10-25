@@ -1,21 +1,22 @@
 class Captain::Tools::ProductLookupTool < Captain::Tools::BasePublicTool
   NO_RESULTS = 'No matching products found.'.freeze
 
-  description 'Search the product catalog using semantic similarity to find the products the customer is asking about'
+  description 'Search the product catalog to find the products the customer is asking about'
   param :query, type: 'string', desc: 'The product name, type or question to search the product catalog for'
 
-  def perform(_tool_context, query:)
+  def perform(tool_context, query:)
     log_tool_usage('searching', { query: query })
-    # A blank query embeds to [], which nearest_neighbors rejects.
-    products = query.present? ? Captain::Product.search(query, assistant: @assistant).to_a : []
+    result = Captain::Retrieval::LexicalRetriever.new(assistant: @assistant, kinds: %i[products]).search(query)
 
-    if products.empty?
+    if result.nil?
       log_tool_usage('no_results', { query: query })
       return NO_RESULTS
     end
 
-    log_tool_usage('found_results', { query: query, count: products.size })
-    products.map { |product| format_product(product) }.join("\n")
+    ids = tool_context.state[:retrieved_product_ids] ||= []
+    ids.concat(result.product_ids - ids)
+    log_tool_usage('found_results', { query: query, count: result.entries.size })
+    result.entries.map { |entry| format_product(entry[:record]) }.join("\n")
   end
 
   private

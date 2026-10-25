@@ -31,10 +31,10 @@ class Captain::Tools::SearchReplyDocumentationService < RubyLLM::Tool
   private
 
   def search_responses(query)
-    if @assistant.present?
-      @assistant.responses.approved.search(query, account_id: @account.id)
-    else
-      @account.captain_assistant_responses.approved.search(query, account_id: @account.id)
+    assistants = @assistant.present? ? [@assistant] : @account.captain_assistants
+    assistants.flat_map do |assistant|
+      result = Captain::Retrieval::LexicalRetriever.new(assistant: assistant, kinds: %i[faqs]).search(query)
+      result ? result.entries.pluck(:record) : []
     end
   end
 
