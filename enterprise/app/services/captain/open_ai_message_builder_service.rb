@@ -1,5 +1,8 @@
 class Captain::OpenAiMessageBuilderService
-  pattr_initialize [:message!]
+  VOICE_MESSAGE_PLACEHOLDER = '[voice message]'.freeze
+
+  # skip_audio_transcription: draft runs have no OpenAI API key, so voice notes become a placeholder.
+  pattr_initialize [:message!, :skip_audio_transcription]
 
   # Extracts text and image URLs from multimodal content array (reverse of generate_content)
   def self.extract_text_and_attachments(content)
@@ -60,6 +63,7 @@ class Captain::OpenAiMessageBuilderService
   def extract_audio_transcriptions(attachments)
     audio_attachments = attachments.where(file_type: :audio)
     return '' if audio_attachments.blank?
+    return VOICE_MESSAGE_PLACEHOLDER if skip_audio_transcription
 
     audio_attachments.map do |attachment|
       result = Messages::AudioTranscriptionService.new(attachment).perform

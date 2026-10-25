@@ -157,7 +157,8 @@ class Captain::Chatgpt::Provider < RubyLLM::Provider
     message = ["ChatGPT request failed with HTTP #{response.status}", code].compact.join(': ')
     raise RequestError.new(type: "http_#{response.status}", message: message) unless response.status == 401
 
-    connection.record_error!(type: 'unauthorized', message: message)
+    # Still rejected after one refresh and retry: the owner must reconnect, so show the reconnect banner.
+    connection.disconnect!(error: { type: 'unauthorized', message: message, at: Time.current.iso8601 })
     raise Captain::Chatgpt::AuthError.new(type: 'unauthorized', message: message)
   end
 

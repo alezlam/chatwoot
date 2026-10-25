@@ -73,8 +73,26 @@ class Captain::ChatgptConnection < ApplicationRecord
       status: :connected, access_token: tokens[:access_token], refresh_token: tokens[:refresh_token].presence || refresh_token,
       id_token: new_id_token, expires_at: access_claims[:exp] && Time.zone.at(access_claims[:exp]),
       email: claims[:email], chatgpt_account_id: claims[:chatgpt_account_id], plan_type: claims[:chatgpt_plan_type],
-      pending_device: {}, last_error: {}
+      pending_device: {}, last_error: kept_usage_limit_error
     )
+  end
+
+  # The model for a draft run: the owner's pick, else the first one ChatGPT lists (saved so the UI shows it).
+  # Returns nil after recording last_error when there is none to use.
+  def draft_model!
+    return model if model.present?
+
+    first_model = Captain::Chatgpt::ModelsClient.list(self).first
+    if first_model.blank?
+      record_error!(type: 'no_models', message: 'ChatGPT listed no models for this account')
+      return
+    end
+
+    update!(model: first_model)
+    first_model
+  rescue Captain::Chatgpt::RequestError => e
+    record_error!(type: e.type, message: e.message)
+    nil
   end
 
   def disconnect!(error: {})
@@ -103,6 +121,11 @@ class Captain::ChatgptConnection < ApplicationRecord
   end
 
   private
+
+  # A token refresh must not erase the usage-limit notice before the limit resets.
+  def kept_usage_limit_error
+    last_error['type'] == 'usage_limit' && rate_limited? ? last_error : {}
+  end
 
   def refresh_due?
     expires_at.nil? || expires_at < REFRESH_MARGIN.from_now

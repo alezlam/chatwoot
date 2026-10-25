@@ -7,8 +7,10 @@ class Captain::Assistant::ResponseRewriter
   AGENT_NAME = 'captain_response_rewriter'.freeze
   INSTRUCTIONS = 'Shorten customer support responses without changing their meaning or adding information.'.freeze
 
-  def initialize(assistant:, attribute_provider:)
+  # agent_options overrides the agent's model and provider (draft runs pass the :chatgpt provider).
+  def initialize(assistant:, attribute_provider:, agent_options: {})
     @assistant = assistant
+    @agent_options = agent_options
     @attribute_provider = attribute_provider
   end
 
@@ -68,7 +70,8 @@ class Captain::Assistant::ResponseRewriter
         instructions: INSTRUCTIONS,
         model: @assistant.agent_model,
         temperature: 0,
-        response_schema: Captain::ResponseSchema
+        response_schema: Captain::ResponseSchema,
+        **@agent_options
       )
       Agents::Runner.with_agents(agent).tap { |runner| install_instrumentation(runner) }
     end

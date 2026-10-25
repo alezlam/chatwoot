@@ -137,10 +137,10 @@ class Captain::Assistant::AgentRunnerService
   end
 
   def wire_agents(assistant_agent, scenario_agents)
-    # Restrict before wiring so handoffs point at the read-only clones.
+    # Restrict before wiring so handoffs point at the draft clones.
     if draft?
-      assistant_agent = read_only_agent(assistant_agent)
-      scenario_agents = scenario_agents.map { |scenario_agent| read_only_agent(scenario_agent) }
+      assistant_agent = draft_agent(assistant_agent)
+      scenario_agents = scenario_agents.map { |scenario_agent| draft_agent(scenario_agent) }
     end
 
     assistant_agent.register_handoffs(*scenario_agents) if scenario_agents.any?
@@ -167,8 +167,27 @@ class Captain::Assistant::AgentRunnerService
 
   def draft? = @source == DRAFT_SOURCE
 
-  def read_only_agent(agent)
-    agent.clone(tools: agent.tools.select { |tool| draft_tool_classes.any? { |tool_class| tool.instance_of?(tool_class) } })
+  def draft_agent(agent)
+    agent.clone(
+      tools: agent.tools.select { |tool| draft_tool_classes.any? { |tool_class| tool.instance_of?(tool_class) } },
+      **llm_agent_options
+    )
+  end
+
+  # Draft runs use only the owner's ChatGPT plan (ruby_llm provider :chatgpt), never the OpenAI API.
+  # Other runs keep each agent's own provider. The response rewriter reads this too.
+  def llm_agent_options
+    return {} unless draft?
+
+    @llm_agent_options ||= begin
+      connection = @assistant.account.captain_chatgpt_connection
+      raise Captain::Chatgpt::AuthError.new(type: 'not_connected', message: 'ChatGPT is not connected for this account') unless connection&.connected?
+
+      {
+        provider: :chatgpt, model: connection.model, assume_model_exists: true,
+        params: { chatgpt_connection_id: connection.id }, headers: { 'session-id': SecureRandom.uuid }
+      }
+    end
   end
 
   def draft_tool_classes
