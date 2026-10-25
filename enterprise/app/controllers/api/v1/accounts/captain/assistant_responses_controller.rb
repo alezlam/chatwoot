@@ -103,7 +103,8 @@ class Api::V1::Accounts::Captain::AssistantResponsesController < Api::V1::Accoun
     params.require(:assistant_response).permit(
       :question,
       :answer,
-      :assistant_id
+      :assistant_id,
+      :confirmed
     )
   end
 end

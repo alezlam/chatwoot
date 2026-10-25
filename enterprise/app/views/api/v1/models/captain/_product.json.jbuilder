@@ -6,5 +6,7 @@ json.prompt product.prompt
 json.context product.context
 json.shopee_item_id product.shopee_item_id
 json.enabled product.enabled
+json.confirmed product.confirmed
+json.hits product.hits
 json.created_at product.created_at.to_i
 json.updated_at product.updated_at.to_i

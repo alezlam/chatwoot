@@ -33,6 +33,16 @@ const { t } = useI18n();
       >
         {{ t('CAPTAIN.PRODUCTS.SHOPEE_ITEM', { id: product.shopee_item_id }) }}
       </span>
+      <label class="flex items-center gap-1.5 text-xs text-n-slate-11">
+        <Switch
+          :model-value="product.confirmed"
+          :disabled="isUpdating || !canEdit"
+          @update:model-value="
+            emit('toggle', { id: product.id, confirmed: $event })
+          "
+        />
+        {{ t('CAPTAIN.PRODUCTS.CONFIRMED_SHORT') }}
+      </label>
       <Switch
         :model-value="product.enabled"
         :disabled="isUpdating || !canEdit"
