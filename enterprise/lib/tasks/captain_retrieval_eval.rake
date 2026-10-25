@@ -21,8 +21,16 @@ class CaptainRetrievalEval
     return puts('No labelled queries found.') if queries.empty?
 
     rows = { 'retriever' => queries.map { |q| [q, retriever_ranking(q)] } }
-    rows['agent (no injection)'] = queries.map { |q| [q, agent_ranking(q)] } if @with_agent && agent_ready?
+    agent_errors = add_agent_row(rows, queries) if @with_agent && agent_ready?
     print_report(rows)
+    puts "agent errors: #{agent_errors} (excluded from the agent row)" if agent_errors
+  end
+
+  # Adds the agent row from the runs that succeeded; returns the number of runs that errored.
+  def add_agent_row(rows, queries)
+    runs = queries.map { |q| [q, agent_ranking(q)] }
+    rows['agent (no injection)'], errored = runs.partition { |_, ranking| ranking }
+    errored.size
   end
 
   private
@@ -43,17 +51,19 @@ class CaptainRetrievalEval
     Conversation.where(id: conversation_ids).find_each.flat_map { |conversation| conversation_queries(conversation, enabled) }
   end
 
+  # Each text is labelled with the most recent matching card before it; text before the first matching card is dropped.
   def conversation_queries(conversation, enabled)
-    messages = conversation.messages.incoming.where(private: false).order(:id).to_a
-    product = messages.reverse_each.filter_map { |m| enabled[card_item_id(m)] }.first
-    return [] if product.nil?
+    product = nil
+    conversation.messages.incoming.where(private: false).order(:id).filter_map do |message|
+      product = enabled[card_item_id(message)] || product
+      next if product.nil? || message.content.blank? || message.content.match?(CARD_TEXT)
 
-    messages.reject { |m| m.content.blank? || m.content.match?(CARD_TEXT) }
-            .map { |m| Query.new(text: m.content, kind: :product, id: product.id, conversation: conversation) }
+      Query.new(text: message.content, kind: :product, id: product.id, conversation: conversation)
+    end
   end
 
   def card_item_id(message)
-    message.content_attributes['shopee_item_id'].presence || message.content.to_s[Captain::Products::MatchService::CARD_CONTENT_REGEX, 1]
+    (message.content_attributes['shopee_item_id'].presence || message.content.to_s[Captain::Products::MatchService::CARD_CONTENT_REGEX, 1]).to_s
   end
 
   def yaml_queries
@@ -70,28 +80,45 @@ class CaptainRetrievalEval
     result ? result.entries.map { |entry| [entry[:kind], entry[:record].id] } : []
   end
 
+  # Returns [[kind, id], ...] in tool-call order, or nil when the run errored (not a miss).
   def agent_ranking(query)
-    conversation = query.conversation || @assistant.inboxes.first&.conversations&.first
-    return [] if conversation.nil?
+    conversation = agent_conversation(query)
+    return if conversation.nil?
 
-    run_options = Captain::Assistant::AgentRunnerService::RunOptions.new(
-      source: Captain::Assistant::AgentRunnerService::DRAFT_SOURCE, runtime_configuration: { draft: true }
-    )
-    runner = Captain::Assistant::AgentRunnerService.new(assistant: @assistant, conversation: conversation, run_options: run_options)
-    runner.generate_response(message_history: [{ role: 'user', content: query.text }])
+    runner = Captain::Assistant::AgentRunnerService.new(assistant: @assistant, conversation: conversation, run_options: draft_run_options)
+    response = runner.generate_response(message_history: [{ role: 'user', content: query.text }])
+    return if run_errored?(response, runner)
+
     ids = runner.retrieved_ids
     ids[:product_ids].map { |id| [:product, id] } + ids[:faq_ids].map { |id| [:faq, id] }
   end
 
+  def agent_conversation(query) = query.conversation || @assistant.inboxes.first&.conversations&.first
+
+  # generate_response rescues failures into an error response; those runs are not misses.
+  def run_errored?(response, runner)
+    response.nil? || response['error'] || runner.last_run_result&.error
+  end
+
+  def draft_run_options
+    Captain::Assistant::AgentRunnerService::RunOptions.new(
+      source: Captain::Assistant::AgentRunnerService::DRAFT_SOURCE, runtime_configuration: { draft: true }
+    )
+  end
+
   def print_report(rows)
     puts table_row('variant', 'n', "hit@#{top_k}", 'MRR')
-    rows.each do |variant, scored|
-      ranks = scored.map { |query, ranking| rank_of(query, ranking) }
-      hit = ranks.count(&:positive?).fdiv(ranks.size)
-      mrr = ranks.sum { |rank| rank.positive? ? 1.0 / rank : 0.0 }.fdiv(ranks.size)
-      puts table_row(variant, ranks.size, hit.round(3).to_s.ljust(5, '0'), mrr.round(3).to_s.ljust(5, '0'))
-    end
+    rows.each { |variant, scored| puts metrics_row(variant, scored) }
     print_misses(rows)
+  end
+
+  def metrics_row(variant, scored)
+    return table_row(variant, 0, 'n/a', 'n/a') if scored.empty?
+
+    ranks = scored.map { |query, ranking| rank_of(query, ranking) }
+    hit = ranks.count(&:positive?).fdiv(ranks.size)
+    mrr = ranks.sum { |rank| rank.positive? ? 1.0 / rank : 0.0 }.fdiv(ranks.size)
+    table_row(variant, ranks.size, hit.round(3).to_s.ljust(5, '0'), mrr.round(3).to_s.ljust(5, '0'))
   end
 
   def table_row(variant, count, hit, mrr) = "#{variant.to_s.ljust(22)} | #{count.to_s.rjust(5)} | #{hit.to_s.rjust(6)} | #{mrr.to_s.rjust(6)}"
