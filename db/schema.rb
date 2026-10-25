@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_25_000001) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -441,6 +441,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
     t.jsonb "response_guidelines", default: []
     t.jsonb "guardrails", default: []
     t.index ["account_id"], name: "index_captain_assistants_on_account_id"
+  end
+
+  create_table "captain_chatgpt_connections", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "status", default: 0, null: false
+    t.text "access_token"
+    t.text "refresh_token"
+    t.text "id_token"
+    t.string "chatgpt_account_id"
+    t.string "email"
+    t.string "plan_type"
+    t.string "model"
+    t.datetime "expires_at"
+    t.jsonb "last_error", default: {}, null: false
+    t.jsonb "pending_device", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_chatgpt_connections_on_account_id", unique: true
   end
 
   create_table "captain_custom_tools", force: :cascade do |t|

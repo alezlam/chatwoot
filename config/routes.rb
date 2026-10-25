@@ -80,6 +80,7 @@ Rails.application.routes.draw do
           end
           namespace :captain do
             resource :preferences, only: [:show, :update]
+            resource :chatgpt_connection, only: [:show, :create, :update, :destroy]
             resources :assistants do
               member do
                 post :playground
