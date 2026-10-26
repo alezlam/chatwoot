@@ -64,6 +64,7 @@ import captainProducts from './captain/products';
 import captainReplyDrafts from './captain/replyDrafts';
 import captainTools from './captain/tools';
 import captainCustomTools from './captain/customTools';
+import captainChatgptConnection from './captain/chatgptConnection';
 
 const plugins = [];
 
@@ -133,6 +134,7 @@ export default createStore({
     captainReplyDrafts,
     captainTools,
     captainCustomTools,
+    captainChatgptConnection,
   },
   plugins,
 });

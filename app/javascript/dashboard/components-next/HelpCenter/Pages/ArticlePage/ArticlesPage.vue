@@ -1,4 +1,5 @@
 <script setup>
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -87,6 +88,8 @@ const { isEnterprise } = useConfig();
 
 const isTranslationAvailable = computed(
   () =>
+    // ponytail: hidden until ChatGPT provider covers it
+    CAPTAIN_EXTRAS_ENABLED &&
     isEnterprise &&
     isFeatureEnabledonAccount.value(
       currentAccountId.value,

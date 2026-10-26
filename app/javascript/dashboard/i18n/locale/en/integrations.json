@@ -427,6 +427,42 @@
       "SEND_ERROR": "Could not send the draft reply. Please try again.",
       "DISCARD_ERROR": "Could not discard the draft reply. Please try again."
     },
+    "CHATGPT": {
+      "TITLE": "ChatGPT connection",
+      "DESCRIPTION": "Captain drafts replies with your ChatGPT account. Connect it once with a device code.",
+      "CONNECT": "Connect ChatGPT",
+      "DISCONNECT": "Disconnect",
+      "CONNECTED_AS": "Connected as {email}",
+      "CONNECTED_AS_PLAN": "Connected as {email} ({plan})",
+      "MODEL": "Model",
+      "MODEL_DEFAULT": "Will use {model} by default",
+      "PENDING_STEPS": "Open the link below, sign in to ChatGPT and enter this code.",
+      "OPEN_VERIFICATION": "Open ChatGPT device login",
+      "WAITING": "Waiting for approval…",
+      "ADMIN_ONLY": "Only administrators can manage the ChatGPT connection.",
+      "CONNECT_ERROR": "Could not start the ChatGPT connection. Please try again.",
+      "UPDATE_ERROR": "Could not update the ChatGPT connection. Please try again.",
+      "NOTICE": {
+        "DISCONNECTED": "ChatGPT is not connected, so Captain cannot draft replies.",
+        "PENDING": "ChatGPT connection is waiting for approval, so Captain cannot draft replies yet.",
+        "RATE_LIMITED": "ChatGPT limit reached — drafts resume at {time}",
+        "FAILING": "AI drafts are failing — check AI Studio settings",
+        "OPEN_SETTINGS": "Open settings"
+      },
+      "ERRORS": {
+        "DEVICE_LOGIN_DISABLED": "Turn on device code login in ChatGPT → Settings → Security, then connect again.",
+        "DEVICE_CODE_EXPIRED": "The device code expired before it was approved. Connect again to get a new code.",
+        "DEVICE_CODE_FAILED": "ChatGPT did not return a device code. Please try again.",
+        "USAGE_LIMIT": "Your ChatGPT usage limit was reached. Drafts resume when the limit resets.",
+        "UNAUTHORIZED": "ChatGPT rejected the saved login. Connect again.",
+        "REFRESH_REJECTED": "ChatGPT login expired and could not be renewed. Connect again.",
+        "REFRESH_FAILED": "ChatGPT login could not be renewed. Captain will retry.",
+        "RATE_LIMITED": "ChatGPT is rate limiting requests. Captain will retry.",
+        "NO_MODELS": "Your ChatGPT account has no models available for Captain.",
+        "ENCRYPTION_NOT_CONFIGURED": "Server is missing encryption keys — ask the admin to set ACTIVE_RECORD_ENCRYPTION_* and redeploy.",
+        "GENERIC": "ChatGPT reported a problem. Please try again."
+      }
+    },
     "PRODUCTS": {
       "TITLE": "Products",
       "ADD_NEW": "Add product",
@@ -434,6 +470,7 @@
       "EMPTY_MESSAGE": "No products yet. Add a product so Captain can draft replies about it.",
       "SEARCH_EMPTY_MESSAGE": "No products match your search.",
       "SHOPEE_ITEM": "Shopee item {id}",
+      "CONFIRMED_SHORT": "Confirmed",
       "BACK": "Back to products",
       "CREATE": {
         "TITLE": "Add product",
@@ -465,6 +502,7 @@
           "PLACEHOLDER": "Product facts"
         },
         "ENABLED": "Enabled",
+        "CONFIRMED": "Confirmed (Captain prefers this product when answering)",
         "SAVE": "Save",
         "DELETE": "Delete",
         "ADMIN_ONLY": "Only administrators can change products."
@@ -1579,7 +1617,8 @@
           "LABEL": "Answer",
           "PLACEHOLDER": "Enter the answer here",
           "ERROR": "Please provide a valid answer."
-        }
+        },
+        "CONFIRMED": "Confirmed (Captain prefers this answer)"
       },
       "EDIT": {
         "TITLE": "Update the FAQ",

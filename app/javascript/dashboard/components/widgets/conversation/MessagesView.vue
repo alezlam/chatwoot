@@ -25,6 +25,7 @@ import { CONTACT_CONVERSATION_NAVIGATION } from 'dashboard/composables/useContac
 // components
 import ReplyBox from './ReplyBox.vue';
 import ReplyDraftCard from 'dashboard/components-next/captain/ReplyDraftCard.vue';
+import ChatgptStatusNotice from 'dashboard/components-next/captain/ChatgptStatusNotice.vue';
 import MessageList from 'next/message/MessageList.vue';
 import ConversationLabelSuggestion from './conversation/LabelSuggestion.vue';
 import ContactConversationLink from './ContactConversationLink.vue';
@@ -85,6 +86,7 @@ export default {
     MessageList,
     ReplyBox,
     ReplyDraftCard,
+    ChatgptStatusNotice,
     Banner,
     ConversationLabelSuggestion,
     ContactConversationLink,
@@ -737,6 +739,11 @@ export default {
         />
       </template>
     </MessageList>
+    <ChatgptStatusNotice
+      :key="currentChat.id"
+      class="mx-4 mt-3 empty:hidden"
+      :conversation-id="currentChat.id"
+    />
     <ReplyDraftCard :conversation-id="currentChat.id" />
     <div class="flex relative flex-col bg-n-surface-1">
       <div

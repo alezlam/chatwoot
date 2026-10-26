@@ -1,6 +1,8 @@
 class CaptainListener < BaseListener
   include ::Events::Types
 
+  EXTRAS_ENABLED = false
+
   def message_updated(event)
     message = event.data[:message]
     return unless message.input_csat?
@@ -18,6 +20,9 @@ class CaptainListener < BaseListener
     assistant = conversation.inbox.captain_assistant
 
     return unless conversation.inbox.captain_active?
+
+    # ponytail: FAQ generation and contact memory need an OpenAI API key; wait for the ChatGPT provider.
+    return unless EXTRAS_ENABLED
 
     Captain::Llm::ContactNotesService.new(assistant, conversation).generate_and_update_notes if assistant.config['feature_memory'].present?
     Captain::Llm::ConversationFaqJob.perform_later(conversation, assistant) if assistant.config['feature_faq'].present?

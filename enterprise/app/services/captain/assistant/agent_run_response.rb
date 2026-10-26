@@ -31,6 +31,7 @@ module Captain::Assistant::AgentRunResponse
   def response_rewriter
     @response_rewriter ||= Captain::Assistant::ResponseRewriter.new(
       assistant: @assistant,
+      agent_options: llm_agent_options,
       attribute_provider: Captain::Assistant::InstrumentationAttributeProvider.new(self)
     )
   end

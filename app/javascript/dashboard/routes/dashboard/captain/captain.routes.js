@@ -5,6 +5,7 @@ import {
   ROLES,
 } from 'dashboard/constants/permissions';
 import { frontendURL } from '../../../helper/URLHelper';
+import { CAPTAIN_EXTRAS_ENABLED } from '../../../helper/captainExtras';
 
 import CaptainPageRouteView from './pages/CaptainPageRouteView.vue';
 import AssistantsIndexPage from './pages/AssistantsIndexPage.vue';
@@ -62,6 +63,19 @@ const metaV2 = {
   ],
 };
 
+// ponytail: hidden until ChatGPT provider covers it
+const hiddenExtrasGuard = (to, from, next) => {
+  if (CAPTAIN_EXTRAS_ENABLED) return next();
+  return next({
+    name: 'captain_assistants_products_index',
+    params: {
+      accountId: to.params.accountId,
+      assistantId: to.params.assistantId,
+    },
+    replace: true,
+  });
+};
+
 const assistantRoutes = [
   {
     path: frontendURL('accounts/:accountId/captain/:assistantId/overview'),
@@ -79,6 +93,7 @@ const assistantRoutes = [
     path: frontendURL('accounts/:accountId/captain/:assistantId/documents'),
     component: DocumentsIndex,
     name: 'captain_assistants_documents_index',
+    beforeEnter: hiddenExtrasGuard,
     meta,
   },
   {
@@ -111,6 +126,7 @@ const assistantRoutes = [
     path: frontendURL('accounts/:accountId/captain/:assistantId/playground'),
     component: AssistantPlaygroundIndex,
     name: 'captain_assistants_playground_index',
+    beforeEnter: hiddenExtrasGuard,
     meta: metaV2,
   },
   {
@@ -125,12 +141,16 @@ const assistantRoutes = [
     ),
     component: FaqSuggestionsIndex,
     name: 'captain_assistants_faq_suggestions',
+    beforeEnter: hiddenExtrasGuard,
     meta: faqSuggestionsMeta,
   },
   {
     path: frontendURL('accounts/:accountId/captain/:assistantId/faqs/pending'),
+    // ponytail: hidden until ChatGPT provider covers it
     redirect: to => ({
-      name: 'captain_assistants_faq_suggestions',
+      name: CAPTAIN_EXTRAS_ENABLED
+        ? 'captain_assistants_faq_suggestions'
+        : 'captain_assistants_products_index',
       params: to.params,
       query: to.query,
     }),

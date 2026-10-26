@@ -79,3 +79,10 @@ remove_orphan_conversations_job:
   cron: '0 */12 * * *'
   class: 'Internal::RemoveOrphanConversationsJob'
   queue: housekeeping
+
+# executed daily at 0100 UTC
+# caches per-assistant query-common tokens for the Captain lexical retriever
+captain_retrieval_query_common_tokens_job:
+  cron: '0 1 * * *'
+  class: 'Captain::Retrieval::QueryCommonTokensJob'
+  queue: scheduled_jobs

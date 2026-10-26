@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_25_000003) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -424,6 +424,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
     t.integer "status", default: 1, null: false
     t.string "documentable_type"
     t.boolean "edited", default: false, null: false
+    t.boolean "confirmed", default: false, null: false
+    t.integer "hits", default: 0, null: false
     t.index ["account_id"], name: "index_captain_assistant_responses_on_account_id"
     t.index ["assistant_id"], name: "index_captain_assistant_responses_on_assistant_id"
     t.index ["documentable_id", "documentable_type"], name: "idx_cap_asst_resp_on_documentable"
@@ -441,6 +443,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
     t.jsonb "response_guidelines", default: []
     t.jsonb "guardrails", default: []
     t.index ["account_id"], name: "index_captain_assistants_on_account_id"
+  end
+
+  create_table "captain_chatgpt_connections", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "status", default: 0, null: false
+    t.text "access_token"
+    t.text "refresh_token"
+    t.text "id_token"
+    t.string "chatgpt_account_id"
+    t.string "email"
+    t.string "plan_type"
+    t.string "model"
+    t.datetime "expires_at"
+    t.jsonb "last_error", default: {}, null: false
+    t.jsonb "pending_device", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_captain_chatgpt_connections_on_account_id", unique: true
   end
 
   create_table "captain_custom_tools", force: :cascade do |t|
@@ -556,6 +576,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
     t.vector "embedding", limit: 1536
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "confirmed", default: false, null: false
+    t.integer "hits", default: 0, null: false
     t.index ["account_id"], name: "index_captain_products_on_account_id"
     t.index ["assistant_id", "shopee_item_id"], name: "idx_captain_products_on_assistant_shopee_item", unique: true, where: "(shopee_item_id IS NOT NULL)"
     t.index ["assistant_id"], name: "index_captain_products_on_assistant_id"
@@ -571,6 +593,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_000002) do
     t.text "content", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "retrieved_product_ids", default: []
+    t.jsonb "retrieved_faq_ids", default: []
     t.index ["account_id"], name: "index_captain_reply_drafts_on_account_id"
     t.index ["assistant_id"], name: "index_captain_reply_drafts_on_assistant_id"
     t.index ["conversation_id"], name: "index_captain_reply_drafts_on_conversation_id", unique: true

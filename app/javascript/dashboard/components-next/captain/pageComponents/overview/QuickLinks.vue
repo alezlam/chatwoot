@@ -4,6 +4,7 @@ import { useRoute, RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useAdmin } from 'dashboard/composables/useAdmin';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import { getHelpUrlForFeature } from 'dashboard/helper/featureHelper';
 
 const { t } = useI18n();
@@ -45,7 +46,10 @@ const links = computed(() =>
         params: { accountId: route.params.accountId },
       },
     },
-  ].filter(link => link.key !== 'billing' || isAdmin.value)
+  ]
+    .filter(link => link.key !== 'billing' || isAdmin.value)
+    // ponytail: playground hidden until ChatGPT provider covers it
+    .filter(link => link.key !== 'playground' || CAPTAIN_EXTRAS_ENABLED)
 );
 </script>
 

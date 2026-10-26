@@ -55,14 +55,14 @@ const openProduct = productId => {
   });
 };
 
-const toggleProduct = async ({ id, enabled }) => {
+const toggleProduct = async ({ id, ...changes }) => {
   if (pendingToggleIds.value.has(id)) return;
   pendingToggleIds.value = new Set(pendingToggleIds.value).add(id);
   try {
     await store.dispatch('captainProducts/update', {
       id,
       assistantId: assistantId.value,
-      enabled,
+      ...changes,
     });
   } catch (error) {
     useAlert(error?.message || t('CAPTAIN.PRODUCTS.TOGGLE.ERROR_MESSAGE'));

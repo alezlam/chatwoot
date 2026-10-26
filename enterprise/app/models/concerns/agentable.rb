@@ -45,7 +45,8 @@ module Concerns::Agentable
     # A plain hash runtime configuration (draft runs) carries only per-run values such as current_product.
     return runtime_configuration.prompt_context_for(self, context) if runtime_configuration.respond_to?(:prompt_context_for)
 
-    context.merge(current_product_context(runtime_configuration), draft_context(runtime_configuration, context))
+    context.merge(current_product_context(runtime_configuration), retrieved_knowledge_context(runtime_configuration),
+                  draft_context(runtime_configuration, context))
   end
 
   # Draft runs only get read-only tools and a human sends the reply, so the prompt drops handoff wording and other tools.
@@ -61,6 +62,13 @@ module Concerns::Agentable
     return {} if current_product.blank?
 
     { current_product: current_product.to_h.symbolize_keys.slice(:name, :description, :prompt, :context) }
+  end
+
+  def retrieved_knowledge_context(runtime_configuration)
+    retrieved_knowledge = runtime_configuration.try(:dig, :retrieved_knowledge)
+    return {} if retrieved_knowledge.blank?
+
+    { retrieved_knowledge: retrieved_knowledge }
   end
 
   def agent_name

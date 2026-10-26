@@ -3,8 +3,10 @@ import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useMapGetter } from 'dashboard/composables/store';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useAssistantSettings } from './useAssistantSettings';
 import Button from 'dashboard/components-next/button/Button.vue';
+import ChatgptConnectionCard from 'dashboard/components-next/captain/pageComponents/assistant/settings/ChatgptConnectionCard.vue';
 import SettingsPageLayout from 'dashboard/components-next/captain/pageComponents/assistant/settings/SettingsPageLayout.vue';
 import AssistantBasicSettingsForm from 'dashboard/components-next/captain/pageComponents/assistant/settings/AssistantBasicSettingsForm.vue';
 import DeleteDialog from 'dashboard/components-next/captain/pageComponents/DeleteDialog.vue';
@@ -12,6 +14,7 @@ import DeleteDialog from 'dashboard/components-next/captain/pageComponents/Delet
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const { isAdmin } = useAdmin();
 const { assistantId, assistant, updateAssistant } = useAssistantSettings();
 
 const deleteAssistantDialog = ref(null);
@@ -52,6 +55,7 @@ const handleDeleteSuccess = () => {
     :heading="t('CAPTAIN.ASSISTANTS.SETTINGS.BASIC_SETTINGS.TITLE')"
     :description="t('CAPTAIN.ASSISTANTS.SETTINGS.BASIC_SETTINGS.DESCRIPTION')"
   >
+    <ChatgptConnectionCard v-if="isAdmin" />
     <AssistantBasicSettingsForm
       :assistant="assistant"
       @submit="updateAssistant"

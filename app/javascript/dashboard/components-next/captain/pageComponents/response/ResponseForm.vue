@@ -4,10 +4,12 @@ import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength } from '@vuelidate/validators';
 import { useMapGetter } from 'dashboard/composables/store';
+import { useAdmin } from 'dashboard/composables/useAdmin';
 
 import Input from 'dashboard/components-next/input/Input.vue';
 import Editor from 'dashboard/components-next/Editor/Editor.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import Switch from 'dashboard/components-next/switch/Switch.vue';
 
 const props = defineProps({
   mode: {
@@ -23,6 +25,7 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'cancel']);
 const { t } = useI18n();
+const { isAdmin } = useAdmin();
 
 const formState = {
   uiFlags: useMapGetter('captainResponses/getUIFlags'),
@@ -31,6 +34,7 @@ const formState = {
 const initialState = {
   question: '',
   answer: '',
+  confirmed: false,
 };
 
 const state = reactive({ ...initialState });
@@ -60,6 +64,7 @@ const handleCancel = () => emit('cancel');
 const prepareDocumentDetails = () => ({
   question: state.question,
   answer: state.answer,
+  confirmed: state.confirmed,
 });
 
 const handleSubmit = async () => {
@@ -74,11 +79,12 @@ const handleSubmit = async () => {
 const updateStateFromResponse = response => {
   if (!response) return;
 
-  const { question, answer } = response;
+  const { question, answer, confirmed } = response;
 
   Object.assign(state, {
     question,
     answer,
+    confirmed: !!confirmed,
   });
 };
 
@@ -110,6 +116,13 @@ watch(
       :max-length="10000"
       :message-type="formErrors.answer ? 'error' : 'info'"
     />
+    <label
+      v-if="isAdmin"
+      class="flex items-center gap-2 text-sm text-n-slate-12"
+    >
+      <Switch v-model="state.confirmed" />
+      {{ t('CAPTAIN.RESPONSES.FORM.CONFIRMED') }}
+    </label>
     <div class="flex items-center justify-between w-full gap-3">
       <Button
         type="button"

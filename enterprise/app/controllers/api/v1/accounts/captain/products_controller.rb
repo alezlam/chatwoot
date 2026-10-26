@@ -38,6 +38,6 @@ class Api::V1::Accounts::Captain::ProductsController < Api::V1::Accounts::BaseCo
   end
 
   def product_params
-    params.require(:product).permit(:name, :description, :prompt, :context, :shopee_item_id, :enabled)
+    params.require(:product).permit(:name, :description, :prompt, :context, :shopee_item_id, :enabled, :confirmed)
   end
 end

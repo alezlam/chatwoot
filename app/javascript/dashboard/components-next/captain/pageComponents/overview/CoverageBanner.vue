@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { CAPTAIN_EXTRAS_ENABLED } from 'dashboard/helper/captainExtras';
 import { LocalStorage } from 'shared/helpers/localStorage';
 
 const props = defineProps({
@@ -43,6 +44,8 @@ const SUGGESTION_THRESHOLD = 100;
 
 const showBanner = computed(
   () =>
+    // ponytail: hidden until ChatGPT provider covers it (links to FAQ suggestions)
+    CAPTAIN_EXTRAS_ENABLED &&
     !dismissed.value &&
     (props.knowledge?.coverage ?? 0) < COVERAGE_THRESHOLD &&
     (props.knowledge?.suggestions ?? 0) > SUGGESTION_THRESHOLD

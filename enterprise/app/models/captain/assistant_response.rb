@@ -4,9 +4,11 @@
 #
 #  id                :bigint           not null, primary key
 #  answer            :text             not null
+#  confirmed         :boolean          default(FALSE), not null
 #  documentable_type :string
 #  edited            :boolean          default(FALSE), not null
 #  embedding         :vector(1536)
+#  hits              :integer          default(0), not null
 #  question          :string           not null
 #  status            :integer          default("approved"), not null
 #  created_at        :datetime         not null
@@ -38,7 +40,6 @@ class Captain::AssistantResponse < ApplicationRecord
   before_validation :ensure_account
   before_validation :ensure_status
   before_validation :mark_as_edited, on: :update
-  after_commit :update_response_embedding
 
   scope :ordered, -> { order(created_at: :desc) }
   scope :by_account, ->(account_id) { where(account_id: account_id) }
@@ -46,11 +47,6 @@ class Captain::AssistantResponse < ApplicationRecord
   scope :with_document, ->(document_id) { where(document_id: document_id) }
 
   enum status: { approved: 1 }
-
-  def self.search(query, account_id: nil)
-    embedding = Captain::Llm::EmbeddingService.new(account_id: account_id).get_embedding(query)
-    nearest_neighbors(:embedding, embedding, distance: 'cosine').limit(5)
-  end
 
   def customer_visible_source_url
     documentable.customer_visible_source_url if documentable.is_a?(Captain::Document)
@@ -74,11 +70,5 @@ class Captain::AssistantResponse < ApplicationRecord
     return if assistant.blank? || assistant.account_id == account_id
 
     errors.add(:assistant, :invalid)
-  end
-
-  def update_response_embedding
-    return unless saved_change_to_question? || saved_change_to_answer? || embedding.nil?
-
-    Captain::Llm::UpdateEmbeddingJob.perform_later(self, "#{question}: #{answer}")
   end
 end

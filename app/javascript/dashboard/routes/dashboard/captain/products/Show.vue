@@ -38,7 +38,10 @@ const form = reactive({
   prompt: '',
   context: '',
   enabled: true,
+  confirmed: false,
 });
+
+const defaultFor = key => (key === 'confirmed' ? false : '');
 
 const canSave = computed(() => isAdmin.value && form.name.trim().length > 0);
 
@@ -50,7 +53,8 @@ const loadProduct = async () => {
       assistantId: assistantId.value,
     });
     Object.keys(form).forEach(key => {
-      form[key] = product.value[key] ?? (key === 'enabled' ? true : '');
+      form[key] =
+        product.value[key] ?? (key === 'enabled' ? true : defaultFor(key));
     });
   } catch (error) {
     useAlert(error?.message || t('CAPTAIN.PRODUCTS.LOAD_ERROR'));
@@ -134,6 +138,10 @@ watch(productId, loadProduct, { immediate: true });
         <label class="flex items-center gap-2 text-sm text-n-slate-12">
           <Switch v-model="form.enabled" :disabled="!isAdmin" />
           {{ t('CAPTAIN.PRODUCTS.FORM.ENABLED') }}
+        </label>
+        <label class="flex items-center gap-2 text-sm text-n-slate-12">
+          <Switch v-model="form.confirmed" :disabled="!isAdmin" />
+          {{ t('CAPTAIN.PRODUCTS.FORM.CONFIRMED') }}
         </label>
         <p v-if="!isAdmin" class="text-sm text-n-slate-11">
           {{ t('CAPTAIN.PRODUCTS.FORM.ADMIN_ONLY') }}

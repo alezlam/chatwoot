@@ -11,6 +11,7 @@ import PaginationFooter from 'dashboard/components-next/pagination/PaginationFoo
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import Policy from 'dashboard/components/policy.vue';
 import AssistantSwitcher from 'dashboard/components-next/captain/pageComponents/switcher/AssistantSwitcher.vue';
+import ChatgptStatusNotice from 'dashboard/components-next/captain/ChatgptStatusNotice.vue';
 import CreateAssistantDialog from 'dashboard/components-next/captain/pageComponents/assistant/CreateAssistantDialog.vue';
 
 const props = defineProps({
@@ -212,6 +213,7 @@ const handleCreateAssistant = () => {
     </header>
     <main class="flex-1 px-6 overflow-y-auto">
       <div class="w-full h-full py-4 mx-auto" :class="containerClass">
+        <ChatgptStatusNotice v-if="!showPaywall" class="mb-3 empty:hidden" />
         <slot v-if="!showPaywall" name="controls" />
         <div
           v-if="isFetching"

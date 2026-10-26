@@ -1,12 +1,12 @@
 class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
-  description 'Search FAQ responses using semantic similarity to find relevant answers'
+  description 'Search FAQ responses to find relevant answers'
   param :query, type: 'string', desc: 'The question or topic to search for in the FAQ database'
 
   def perform(tool_context, query:)
     log_tool_usage('searching', { query: query })
 
-    # Use existing vector search on approved responses
-    responses = @assistant.responses.approved.search(query).includes(:documentable).to_a
+    result = Captain::Retrieval::LexicalRetriever.new(assistant: @assistant, kinds: %i[faqs]).search(query)
+    responses = result ? result.entries.pluck(:record) : []
     record_retrieved_sources(tool_context, responses)
 
     if responses.empty?
@@ -14,7 +14,7 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
       "No relevant FAQs found for: #{query}"
     else
       log_tool_usage('found_results', { query: query, count: responses.size })
-      format_responses(tool_context, responses)
+      format_entries(tool_context, result.entries)
     end
   end
 
@@ -27,6 +27,8 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
   def record_retrieved_sources(tool_context, responses)
     return if responses.empty?
 
+    record_retrieved_ids(tool_context, responses)
+
     metadata = tool_context.state[:cw_metadata] ||= {}
     metadata[:faq_ids] = Array(metadata[:faq_ids]) | responses.map(&:id)
 
@@ -38,25 +40,23 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
     metadata[:used_faq_ids] = Array(metadata[:used_faq_ids]) | used_faq_ids
   end
 
-  def format_responses(tool_context, responses)
-    responses.map { |response| format_response(tool_context, response) }.join
+  def record_retrieved_ids(tool_context, responses)
+    ids = tool_context.state[:retrieved_faq_ids] ||= []
+    ids.concat(responses.map(&:id) - ids)
   end
 
-  def format_response(tool_context, response)
-    formatted_response = "
-        FAQ result:
-        "
-    if @assistant.citations_enabled? && response.customer_visible_source_url.present?
-      formatted_response += "
-          Citation index: #{citation_index(tool_context, response)}
-          "
-    end
-    formatted_response += "
-        Question: #{response.question}
-        Answer: #{response.answer}
-        "
+  def format_entries(tool_context, entries)
+    entries.map do |entry|
+      response = entry[:record]
+      citation = citation_index_line(tool_context, response)
+      citation ? "#{citation}\n#{entry[:markdown]}" : entry[:markdown]
+    end.join("\n")
+  end
 
-    formatted_response
+  def citation_index_line(tool_context, response)
+    return unless @assistant.citations_enabled? && response.customer_visible_source_url.present?
+
+    "Citation index: #{citation_index(tool_context, response)}"
   end
 
   def citation_index(tool_context, response)

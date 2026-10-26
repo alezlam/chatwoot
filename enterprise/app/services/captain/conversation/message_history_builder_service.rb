@@ -1,7 +1,8 @@
 class Captain::Conversation::MessageHistoryBuilderService
   RESOLUTION_MARKER = '<conversation_boundary status="resolved" />'.freeze
 
-  pattr_initialize [:conversation!]
+  # draft: build history without any OpenAI API call (no audio transcription).
+  pattr_initialize [:conversation!, :draft]
 
   def perform
     conversation_messages_for_context.filter_map do |message|
@@ -57,6 +58,6 @@ class Captain::Conversation::MessageHistoryBuilderService
       end
     end
 
-    Captain::OpenAiMessageBuilderService.new(message: message).generate_content
+    Captain::OpenAiMessageBuilderService.new(message: message, skip_audio_transcription: draft).generate_content
   end
 end
