@@ -44,7 +44,7 @@ const TREE_CONNECTOR =
       :is="to ? 'router-link' : 'div'"
       :to="to"
       :title="label"
-      class="flex h-8 items-center gap-2 px-2 py-1 rounded-lg ltr:hover:bg-gradient-to-r rtl:hover:bg-gradient-to-l from-transparent via-n-slate-3/70 to-n-slate-3/70 group min-w-0"
+      class="flex h-[2.2rem] items-center gap-2 px-2 py-1 rounded-lg ltr:hover:bg-gradient-to-r rtl:hover:bg-gradient-to-l from-transparent via-n-slate-3/70 to-n-slate-3/70 group min-w-0"
       :class="{
         'text-n-slate-12 bg-n-alpha-2 active': active,
       }"
@@ -55,10 +55,13 @@ const TREE_CONNECTOR =
         v-bind="{ label, icon, active, badgeCount }"
       />
       <template v-else>
-        <span v-if="icon" class="size-4 grid place-content-center rounded-full">
-          <Icon :icon="icon" class="size-4 inline-block" />
+        <span
+          v-if="icon"
+          class="size-[1.1rem] grid place-content-center rounded-full"
+        >
+          <Icon :icon="icon" class="size-[1.1rem] inline-block" />
         </span>
-        <div class="flex-1 truncate min-w-0 text-sm">{{ label }}</div>
+        <div class="flex-1 truncate min-w-0 text-[0.9625rem]">{{ label }}</div>
         <SidebarUnreadBadge :count="badgeCount" />
       </template>
     </component>

@@ -38,7 +38,7 @@ const onClick = event => {
 <template>
   <component
     :is="to ? 'a' : 'div'"
-    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-8 min-w-0"
+    class="flex items-center gap-2 px-1.5 py-1 rounded-lg h-[2.2rem] min-w-0"
     role="button"
     draggable="false"
     :href="href"
@@ -51,7 +51,7 @@ const onClick = event => {
     @click.stop="onClick"
   >
     <div v-if="icon" class="relative flex items-center gap-2">
-      <Icon v-if="icon" :icon="icon" class="size-4" />
+      <Icon v-if="icon" :icon="icon" class="size-[1.1rem]" />
       <span
         v-if="showBadge"
         class="size-2 -top-px ltr:-right-px rtl:-left-px bg-n-brand absolute rounded-full border border-n-solid-2"
@@ -61,10 +61,10 @@ const onClick = event => {
       class="flex items-center gap-1.5 flex-grow justify-between min-w-0 flex-1"
     >
       <span
-        class="truncate"
+        class="truncate !text-[0.9625rem]"
         :class="{
           'text-body-main': !isActive,
-          'font-medium text-sm': isActive || hasActiveChild,
+          'font-medium': isActive || hasActiveChild,
         }"
       >
         {{ label }}
